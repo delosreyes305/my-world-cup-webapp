@@ -3,15 +3,32 @@
 // Prod: Vercel serverless function api/claude.js handles it
 // The ANTHROPIC_API_KEY is NEVER in the browser bundle.
 
-import { post } from './http.js'
+// AI calls need a longer timeout than other API calls (Claude can take 15-20s)
+const AI_TIMEOUT_MS = 25000
 
-async function callClaude({ prompt, system, max_tokens = 900 }) {
+async function callClaude({ prompt, system, max_tokens = 650 }) {
   const body = { prompt, max_tokens }
   if (system) body.system = system
-  // post() throws on non-2xx; the error message is surfaced to the caller
-  const data = await post('/api/claude', body)
-  if (data.error) throw new Error(data.error)
-  return data.content?.find(c => c.type === 'text')?.text || ''
+
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
+
+  try {
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    })
+    clearTimeout(timer)
+    const data = await res.json()
+    if (data.error) throw new Error(data.error)
+    return data.content?.find(c => c.type === 'text')?.text || ''
+  } catch (err) {
+    clearTimeout(timer)
+    if (err.name === 'AbortError') throw new Error('AI request timed out. Please try again.')
+    throw err
+  }
 }
 
 // ─────────────────────────────────────────────────────────
@@ -85,7 +102,7 @@ Reply ONLY with valid JSON (no extra text, no markdown), using this exact struct
 
   // ── Call the API — let auth/config errors bubble up ──
   // Only catch JSON-parse issues (bad response format) and fall back to mock.
-  const text = await callClaude({ prompt, system, max_tokens: 900 })
+  const text = await callClaude({ prompt, system, max_tokens: 650 })
 
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/)

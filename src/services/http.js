@@ -18,7 +18,7 @@ export async function request(url, options = {}) {
     return await res.json()
   } catch (err) {
     clearTimeout(timer)
-    if (err.name === 'AbortError') throw new Error('Timeout: la API tardó demasiado.')
+    if (err.name === 'AbortError') throw new Error('Request timed out. Please try again.')
     throw err
   }
 }
