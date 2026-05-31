@@ -182,6 +182,11 @@
     scrollbar-width: none;
     /* iOS safe area (home indicator) */
     padding-bottom: env(safe-area-inset-bottom, 0px);
+    /* Prevent jump when mobile browser chrome shows/hides on scroll */
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
   .bottom-nav::-webkit-scrollbar { display: none; }
 
