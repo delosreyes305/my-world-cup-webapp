@@ -1,0 +1,58 @@
+.match-card { position: relative; cursor: pointer; }
+
+.match-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.match-live {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--red);
+  font-weight: 700;
+}
+.match-done     { font-size: 11px; color: var(--text3); }
+.match-upcoming { font-size: 11px; color: var(--electric); font-weight: 600; }
+
+.match-teams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.match-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+.team-flag-wrap {
+  width: 48px;
+  height: 36px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.team-name-text { font-size: 13px; font-weight: 500; text-align: center; }
+
+.match-score-center { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.score-display {
+  font-family: var(--font-display);
+  font-size: 36px;
+  letter-spacing: 4px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.score-sep    { color: var(--text3); font-size: 28px; }
+.score-vs     { font-family: var(--font-display); font-size: 22px; color: var(--text3); }

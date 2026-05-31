@@ -1,0 +1,106 @@
+# ─── My World Cup 2026 — Flask Backend ───────────────────────────────
+# Stack: Flask + SQLAlchemy + PostgreSQL (Supabase) + JWT + Bcrypt + Mail
+#
+# Arrancar:
+#   cd backend
+#   python -m venv venv && source venv/bin/activate
+#   pip install -r requirements.txt
+#   cp .env.example .env  (y rellena todas las variables)
+#   python app.py
+
+from flask import Flask
+from flask_cors import CORS
+from dotenv import load_dotenv
+import os
+
+from extensions import db, bcrypt, jwt, mail
+from apscheduler.schedulers.background import BackgroundScheduler
+
+load_dotenv()
+
+
+def create_app():
+    app = Flask(__name__)
+
+    # ── Base de datos ─────────────────────────────────────────────────
+    db_url = os.getenv('DATABASE_URL', '')
+    if db_url.startswith('postgres://'):        # Heroku / old format
+        db_url = db_url.replace('postgres://', 'postgresql://', 1)
+
+    app.config['SQLALCHEMY_DATABASE_URI']        = db_url
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    # ── JWT ───────────────────────────────────────────────────────────
+    app.config['JWT_SECRET_KEY']         = os.getenv('JWT_SECRET_KEY', 'dev-secret-CHANGE-IN-PROD')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False   # cambiar a timedelta(days=7) en prod
+
+    # ── Email ─────────────────────────────────────────────────────────
+    app.config['MAIL_SERVER']         = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT']           = int(os.getenv('MAIL_PORT', 587))
+    app.config['MAIL_USE_TLS']        = True
+    app.config['MAIL_USERNAME']       = os.getenv('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD']       = os.getenv('MAIL_PASSWORD')
+    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER') or os.getenv('MAIL_USERNAME')
+
+    # ── CORS ──────────────────────────────────────────────────────────
+    CORS(app, resources={
+        r'/api/*': {
+            'origins': [
+                'http://localhost:3000',
+                'http://localhost:5173',
+                'https://*.vercel.app',
+            ]
+        }
+    })
+
+    # ── Inicializar extensiones ───────────────────────────────────────
+    db.init_app(app)
+    bcrypt.init_app(app)
+    jwt.init_app(app)
+    mail.init_app(app)
+
+    # ── Blueprints ────────────────────────────────────────────────────
+    from routes.auth          import auth_bp
+    from routes.favorites     import favorites_bp
+    from routes.notifications import notifications_bp
+
+    app.register_blueprint(auth_bp,           url_prefix='/api/auth')
+    app.register_blueprint(favorites_bp,      url_prefix='/api/favorites')
+    app.register_blueprint(notifications_bp,  url_prefix='/api/notifications')
+
+    # ── Crear tablas ──────────────────────────────────────────────────
+    with app.app_context():
+        db.create_all()
+        print('✅ Base de datos lista')
+
+    return app
+
+
+app = create_app()
+
+# ── Scheduler de notificaciones ───────────────────────────────────────
+# Se inicia solo en el proceso principal (evita duplicados con el
+# reloader de Werkzeug en modo debug).
+if os.environ.get('WERKZEUG_RUN_MAIN') != 'false':
+    from jobs.match_notifier import check_upcoming_matches
+    from jobs.news_notifier  import check_news_favorites
+
+    _scheduler = BackgroundScheduler(daemon=True)
+    _scheduler.add_job(
+        lambda: check_upcoming_matches(app),
+        trigger='interval', minutes=15,
+        id='match_notifier', replace_existing=True,
+    )
+    _scheduler.add_job(
+        lambda: check_news_favorites(app),
+        trigger='interval', hours=3,
+        id='news_notifier', replace_existing=True,
+    )
+    _scheduler.start()
+    print('⏰ Scheduler de notificaciones iniciado '
+          '(partidos cada 15 min · noticias cada 3 h)')
+
+if __name__ == '__main__':
+    port = int(os.getenv('FLASK_PORT', 5000))
+    print(f'🚀 Flask corriendo en http://localhost:{port}')
+    app.run(debug=True, port=port)

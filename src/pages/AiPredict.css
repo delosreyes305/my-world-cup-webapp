@@ -1,0 +1,149 @@
+/* ─── AI Predictor — responsive layout ─────────────────── */
+
+/* ── Team selector: horizontal on desktop ── */
+.predict-teams-row {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: flex-end;   /* align bottoms so VS sits with the selects */
+  margin-bottom: 16px;
+}
+
+.predict-team-col {
+  flex: 1;
+  min-width: 0;
+}
+
+/* VS badge — desktop */
+.predict-vs {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--text3);
+  flex-shrink: 0;
+  padding-bottom: 10px;   /* visual alignment with the select box */
+  user-select: none;
+  letter-spacing: 1px;
+}
+
+/* ── Mobile: stack vertically, VS becomes a centred divider ── */
+@media (max-width: 560px) {
+  .predict-teams-row {
+    flex-direction: column;
+    align-items: stretch;   /* children fill full width */
+    gap: 0;
+  }
+
+  .predict-team-col {
+    width: 100%;
+  }
+
+  /* VS divider: ───── VS ───── */
+  .predict-vs {
+    width: 100%;
+    padding-bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 11px;
+    font-family: var(--font-display);
+    letter-spacing: 4px;
+    color: var(--gold);
+    opacity: 0.7;
+    margin: 14px 0;
+  }
+
+  .predict-vs::before,
+  .predict-vs::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border));
+  }
+
+  .predict-vs::after {
+    background: linear-gradient(to left, transparent, var(--border));
+  }
+}
+
+/* ─── Strengths / Key Players: 2-col → 1-col on mobile ─── */
+.predict-strengths-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 560px) {
+  .predict-strengths-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+/* ─── Win-prob legend: wrap gracefully ─── */
+.predict-prob-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 400px) {
+  .predict-prob-legend {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
+
+/* ─── Score banner ─── */
+.predict-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: nowrap;
+  margin-bottom: 20px;
+}
+
+.predict-score-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100px;
+}
+
+.predict-score-team span {
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.predict-score-num {
+  font-family: var(--font-display);
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--gold);
+  letter-spacing: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+@media (max-width: 400px) {
+  .predict-score-num {
+    font-size: 40px;
+    letter-spacing: 2px;
+  }
+
+  .predict-score-team {
+    max-width: 76px;
+  }
+
+  .predict-score-team span {
+    font-size: 11px;
+  }
+}

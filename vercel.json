@@ -1,0 +1,16 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/football/:path*",
+      "destination": "https://v3.football.api-sports.io/:path*"
+    },
+    {
+      "source": "/api/news/:path*",
+      "destination": "https://newsapi.org/v2/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

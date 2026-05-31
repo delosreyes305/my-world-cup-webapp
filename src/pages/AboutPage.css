@@ -1,0 +1,254 @@
+/* ─── About Page ─────────────────────────────────────────────────── */
+
+/* ── Hero ── */
+.about-hero {
+  text-align: center;
+  padding: 28px 16px 24px;
+}
+
+.about-logo {
+  height: 72px;
+  width: auto;
+  display: block;
+  margin: 0 auto 16px;
+  filter: drop-shadow(0 4px 20px rgba(240,180,41,0.3));
+}
+
+.about-title {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.about-tagline {
+  font-size: 14px;
+  color: var(--text3);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── Cards ── */
+.about-card {
+  padding: 20px;
+}
+
+.about-section-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.about-section-title i { color: var(--gold); }
+
+.about-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin: 0 0 18px;
+}
+
+/* ── Features grid ── */
+.about-features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.about-feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--text2);
+  line-height: 1.45;
+}
+
+.about-feature-icon {
+  color: var(--gold);
+  font-size: 13px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 400px) {
+  .about-features-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Tech stack chips ── */
+.about-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.about-stack-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid color-mix(in srgb, var(--chip-color) 30%, transparent);
+  color: var(--text2);
+  transition: background 0.15s;
+}
+.about-stack-chip:hover {
+  background: rgba(255,255,255,0.07);
+}
+
+/* ── Creator ── */
+.about-creator {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.about-creator-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gold-grad);
+  color: var(--navy);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(240,180,41,0.25);
+}
+
+.about-creator-avatar--photo {
+  object-fit: cover;
+  background: transparent;
+  font-size: 0;
+}
+
+.about-creator-info { flex: 1; min-width: 0; }
+
+.about-creator-name {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.about-creator-role {
+  font-size: 12px;
+  color: var(--gold);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.about-creator-bio {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+
+/* ── Social buttons ── */
+.about-social {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.about-social-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.about-social-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.about-social-btn:active { transform: translateY(0); }
+
+.about-social-btn--linkedin {
+  background: #0077b5;
+  color: #fff;
+}
+.about-social-btn--github {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text);
+}
+
+/* ── Buy Me a Coffee card ── */
+.about-card--coffee {
+  border-color: rgba(240,180,41,0.2);
+  background: linear-gradient(135deg, rgba(240,180,41,0.05) 0%, transparent 70%);
+}
+
+.about-coffee-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.about-coffee-icon {
+  font-size: 36px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.about-coffee-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.about-coffee-sub {
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.5;
+}
+
+.about-coffee-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, #f0b429, #e8a020);
+  color: #0a0e1a;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 4px 16px rgba(240,180,41,0.3);
+  width: 100%;
+  justify-content: center;
+}
+.about-coffee-btn:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(240,180,41,0.4);
+}
+.about-coffee-btn:active { transform: translateY(0); }
+
+/* ── Footer note ── */
+.about-footer-note {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text3);
+  padding: 8px 16px 24px;
+  line-height: 1.6;
+}

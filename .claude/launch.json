@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "my-world-cup",
+      "runtimeExecutable": "/Users/erickdelosreyes/Documents/Projects/my-world-cup-master/node_modules/.bin/vite",
+      "runtimeArgs": [],
+      "port": 5173
+    }
+  ]
+}
