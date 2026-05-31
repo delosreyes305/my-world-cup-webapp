@@ -5,10 +5,6 @@
       "destination": "https://v3.football.api-sports.io/:path*"
     },
     {
-      "source": "/api/news/:path*",
-      "destination": "https://api.thenewsapi.com/v1/news/:path*"
-    },
-    {
       "source": "/api/auth/:path*",
       "destination": "https://my-world-cup-webapp-production.up.railway.app/api/auth/:path*"
     },
