@@ -101,6 +101,8 @@ if os.environ.get('WERKZEUG_RUN_MAIN') != 'false':
           '(partidos cada 15 min · noticias cada 3 h)')
 
 if __name__ == '__main__':
-    port = int(os.getenv('FLASK_PORT', 5000))
-    print(f'🚀 Flask corriendo en http://localhost:{port}')
-    app.run(debug=True, port=port)
+    # Use Railway's PORT variable first, fall back to FLASK_PORT, then 5000
+    port = int(os.getenv('PORT', os.getenv('FLASK_PORT', 5000)))
+    debug = os.getenv('FLASK_ENV', 'production') == 'development'
+    print(f'🚀 Flask corriendo en http://0.0.0.0:{port}')
+    app.run(host='0.0.0.0', debug=debug, port=port)
