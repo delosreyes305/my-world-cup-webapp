@@ -11,15 +11,14 @@ async function safeFetch(url, options = {}) {
       ...options,
     })
   } catch {
-    throw new Error('No se pudo conectar con el servidor. ¿Está el backend corriendo?')
+    throw new Error('Could not connect to the server. Please try again.')
   }
 
   let data
   try {
     data = await res.json()
   } catch {
-    // Respuesta vacía o no-JSON (ej: proxy caído)
-    throw new Error('Error en el servidor. Inténtalo de nuevo más tarde.')
+    throw new Error('Server error. Please try again later.')
   }
 
   return { res, data }
@@ -64,7 +63,7 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body:   JSON.stringify({ email, password }),
     })
-    if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión')
+    if (!res.ok) throw new Error(data.error || 'Login failed. Please try again.')
 
     localStorage.setItem('mwc_token', data.access_token)
     setToken(data.access_token)
@@ -79,7 +78,7 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body:   JSON.stringify(formData),
     })
-    if (!res.ok) throw new Error(data.error || 'Error al registrarse')
+    if (!res.ok) throw new Error(data.error || 'Registration failed. Please try again.')
 
     localStorage.setItem('mwc_token', data.access_token)
     setToken(data.access_token)
@@ -94,7 +93,7 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body:   JSON.stringify({ email }),
     })
-    if (!res.ok) throw new Error(data.error || 'Error al enviar el correo')
+    if (!res.ok) throw new Error(data.error || 'Failed to send email. Please try again.')
     return data.message
   }, [])
 
@@ -104,7 +103,7 @@ export function AuthProvider({ children }) {
       method: 'POST',
       body:   JSON.stringify({ token, password }),
     })
-    if (!res.ok) throw new Error(data.error || 'Error al cambiar la contraseña')
+    if (!res.ok) throw new Error(data.error || 'Failed to change password. Please try again.')
     return data.message
   }, [])
 

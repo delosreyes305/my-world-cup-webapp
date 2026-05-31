@@ -17,11 +17,11 @@ EMAIL_RE = re.compile(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
 def _validate_register(data):
     for field in ('first_name', 'last_name', 'email', 'password'):
         if not str(data.get(field, '')).strip():
-            return f'{field} es requerido', 400
+            return f'{field} is required', 400
     if not EMAIL_RE.match(data['email']):
-        return 'Email inválido', 400
+        return 'Invalid email address', 400
     if len(data['password']) < 6:
-        return 'La contraseña debe tener al menos 6 caracteres', 400
+        return 'Password must be at least 6 characters', 400
     return None, None
 
 
@@ -36,7 +36,7 @@ def register():
 
     email = data['email'].lower().strip()
     if User.query.filter_by(email=email).first():
-        return jsonify({'error': 'Este email ya está registrado'}), 409
+        return jsonify({'error': 'This email is already registered'}), 409
 
     user = User(
         first_name    = data['first_name'].strip(),
@@ -59,11 +59,11 @@ def login():
     password = str(data.get('password', ''))
 
     if not email or not password:
-        return jsonify({'error': 'Email y contraseña son requeridos'}), 400
+        return jsonify({'error': 'Email and password are required'}), 400
 
     user = User.query.filter_by(email=email).first()
     if not user or not bcrypt.check_password_hash(user.password_hash, password):
-        return jsonify({'error': 'Email o contraseña incorrectos'}), 401
+        return jsonify({'error': 'Invalid email or password'}), 401
 
     access_token = create_access_token(identity=str(user.id))
     return jsonify({'access_token': access_token, 'user': user.to_dict()}), 200
