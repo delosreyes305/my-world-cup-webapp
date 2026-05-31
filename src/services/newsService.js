@@ -4,7 +4,7 @@
 import { get } from './http.js'
 import { NEWS } from '../data/mockData.js'
 
-const BASE   = '/api/news'   // proxied: Vite en dev, Vercel rewrite en prod
+const BASE   = '/api/news/all'   // proxied: Vite en dev, Vercel rewrite en prod
 const KEY    = import.meta.env.VITE_NEWS_API_KEY || ''
 const isMock = !KEY || KEY === 'TU_CLAVE_AQUI'
 
