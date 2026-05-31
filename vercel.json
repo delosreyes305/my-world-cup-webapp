@@ -6,7 +6,19 @@
     },
     {
       "source": "/api/news/:path*",
-      "destination": "https://newsapi.org/v2/:path*"
+      "destination": "https://api.thenewsapi.com/v1/:path*"
+    },
+    {
+      "source": "/api/auth/:path*",
+      "destination": "https://my-world-cup-webapp-production.up.railway.app/api/auth/:path*"
+    },
+    {
+      "source": "/api/favorites/:path*",
+      "destination": "https://my-world-cup-webapp-production.up.railway.app/api/favorites/:path*"
+    },
+    {
+      "source": "/api/notifications/:path*",
+      "destination": "https://my-world-cup-webapp-production.up.railway.app/api/notifications/:path*"
     },
     {
       "source": "/(.*)",
