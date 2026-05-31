@@ -1,4 +1,4 @@
-# ⚽ My World Cup 2026
+# My World Cup 2026
 
 The ultimate companion app for FIFA World Cup 2026. Follow every match, team and player in real time — with AI predictions, live news, trivia, email notifications and more.
 
@@ -10,7 +10,7 @@ The ultimate companion app for FIFA World Cup 2026. Follow every match, team and
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
@@ -24,7 +24,7 @@ The ultimate companion app for FIFA World Cup 2026. Follow every match, team and
 
 ---
 
-## ✨ Features
+## Features
 
 | Feature | Description |
 |---|---|
@@ -43,7 +43,7 @@ The ultimate companion app for FIFA World Cup 2026. Follow every match, team and
 
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 **Frontend**
 - React 18 + Vite
@@ -110,13 +110,13 @@ my-world-cup-webapp/
 
 ---
 
-## 🔑 Required API Keys
+## Required API Keys
 
 You need **5 API keys** to run the full app. Here's exactly where to get each one:
 
 ---
 
-### 1. 🏈 API-Sports (Football Data)
+### 1. API-Sports (Football Data)
 > Powers: Matches, Teams, Players, Live scores, FIFA Ranking
 
 1. Go to → **https://dashboard.api-football.com/register**
@@ -134,7 +134,7 @@ FOOTBALL_API_KEY=your_key_here
 
 ---
 
-### 2. 📰 TheNewsAPI (News Feed)
+### 2. TheNewsAPI (News Feed)
 > Powers: News page, Home headlines, Email news digests
 
 1. Go to → **https://www.thenewsapi.com/register**
@@ -152,7 +152,7 @@ NEWS_API_KEY=your_token_here
 
 ---
 
-### 3. 🤖 Anthropic Claude (AI Features)
+### 3. Anthropic Claude (AI Features)
 > Powers: AI Match Predictor, AI Trivia generation
 
 1. Go to → **https://console.anthropic.com/**
@@ -170,7 +170,7 @@ VITE_ANTHROPIC_API_KEY=sk-ant-api03-your_key_here
 
 ---
 
-### 4. 📧 Resend (Email Notifications)
+### 4. Resend (Email Notifications)
 > Powers: Match alerts, news digests sent to users
 
 1. Go to → **https://resend.com/signup**
@@ -185,7 +185,7 @@ RESEND_API_KEY=re_your_key_here
 
 ---
 
-### 5. 🗄️ Supabase (PostgreSQL Database)
+### 5. Supabase (PostgreSQL Database)
 > Powers: User accounts, Favorites, Notification preferences
 
 1. Go to → **https://supabase.com/**
@@ -202,7 +202,7 @@ DATABASE_URL=postgresql://postgres:YOUR_PASSWORD@db.YOURREF.supabase.co:5432/pos
 
 ---
 
-### 6. 🔐 JWT Secret Key
+### 6. JWT Secret Key
 > Used to sign authentication tokens — generate one locally
 
 ```bash
@@ -216,7 +216,7 @@ JWT_SECRET_KEY=paste_the_generated_key_here
 
 ---
 
-## ⚙️ Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 - Node.js >= 20
@@ -269,7 +269,7 @@ The database tables are created **automatically** on first run — no manual mig
 
 ---
 
-## 🚀 Running the Project
+## Running the Project
 
 You need **two terminals** running simultaneously:
 
@@ -345,7 +345,7 @@ lsof -ti:5000 | xargs kill -9 && cd backend && source venv/bin/activate && pytho
 
 ---
 
-### 🛑 Kill frontend dev server
+### Kill frontend dev server
 
 ```bash
 # Kill whatever is running on port 3000
@@ -354,7 +354,7 @@ lsof -ti:3000 | xargs kill -9
 
 ---
 
-### 🐍 Python / pip
+### Python / pip
 
 ```bash
 # Generate a secure random JWT secret key
@@ -370,7 +370,7 @@ pip freeze > requirements.txt
 
 ---
 
-### 🗄️ Database
+### Database
 
 ```bash
 # The tables are auto-created on first Flask run.
@@ -381,7 +381,7 @@ pip freeze > requirements.txt
 
 ---
 
-## 📄 Environment Variables Reference
+## Environment Variables Reference
 
 ### Frontend — `.env` (root folder)
 
@@ -438,7 +438,7 @@ FLASK_PORT=5000
 
 ---
 
-## 🌐 Deployment
+## Deployment
 
 ### Vercel (Frontend + Claude API function)
 
@@ -459,12 +459,12 @@ Set all `backend/.env` variables in your chosen platform's dashboard.
 
 ---
 
-## 👤 Author
+## Author
 
 **Erick De los Reyes**
-- 🌐 [LinkedIn](https://www.linkedin.com/in/erickdelosreyes/)
-- 💻 [GitHub](https://github.com/delosreyes305)
-- ☕ [Buy me a coffee](https://buymeacoffee.com/delosreyes305)
+- [LinkedIn](https://www.linkedin.com/in/erickdelosreyes/)
+- [GitHub](https://github.com/delosreyes305)
+- [Buy me a coffee](https://buymeacoffee.com/delosreyes305)
 
 ---
 
