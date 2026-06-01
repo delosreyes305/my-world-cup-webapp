@@ -82,24 +82,32 @@ export async function getNews(category = 'all', lang = 'en', pageSize = 18) {
 
     const pool = data.data.filter(a => a.title && a.title !== '[Removed]')
 
-    // First pass: articles that explicitly mention World Cup 2026
-    let articles = pool
-      .filter(a => wcFilter.test(a.title) || wcFilter.test(a.description || ''))
-      .map(a => normalizeArticle(a, lang))
-
-    // Second pass: fill remaining slots with general soccer articles (deduped)
-    if (articles.length < pageSize) {
-      const seen = new Set(articles.map(a => a.id))
-      const extra = pool
-        .filter(a => !seen.has(a.uuid || a.url))
-        .filter(a => fallback.test(a.title) || fallback.test(a.description || ''))
-        .map(a => normalizeArticle(a, lang))
-      articles = [...articles, ...extra]
-    }
-
-    // Last resort: return everything from pool
-    if (articles.length === 0) {
+    // When the API returned fewer articles than requested (free-tier cap or sparse
+    // results), trust the search query and skip title-level filtering entirely —
+    // otherwise we'd drop already-relevant articles down to nothing.
+    let articles
+    if (pool.length < pageSize) {
       articles = pool.map(a => normalizeArticle(a, lang))
+    } else {
+      // First pass: articles that explicitly mention World Cup 2026
+      articles = pool
+        .filter(a => wcFilter.test(a.title) || wcFilter.test(a.description || ''))
+        .map(a => normalizeArticle(a, lang))
+
+      // Second pass: fill remaining slots with general soccer articles (deduped)
+      if (articles.length < pageSize) {
+        const seen = new Set(articles.map(a => a.id))
+        const extra = pool
+          .filter(a => !seen.has(a.uuid || a.url))
+          .filter(a => fallback.test(a.title) || fallback.test(a.description || ''))
+          .map(a => normalizeArticle(a, lang))
+        articles = [...articles, ...extra]
+      }
+
+      // Last resort: return everything from pool
+      if (articles.length === 0) {
+        articles = pool.map(a => normalizeArticle(a, lang))
+      }
     }
 
     if (articles.length === 0) return mockByCategory(category)
@@ -135,19 +143,26 @@ export async function getHeadlines(lang = 'en', pageSize = 6) {
 
     const pool = data.data.filter(a => a.title && a.title !== '[Removed]')
 
-    let articles = pool
-      .filter(a => wcFilter.test(a.title) || wcFilter.test(a.description || ''))
-      .map(a => normalizeArticle(a, lang))
-
-    if (articles.length < 3) {
-      articles = pool
-        .filter(a => fallback.test(a.title) || fallback.test(a.description || ''))
-        .map(a => normalizeArticle(a, lang))
-    }
-
-    // Last resort: return all sports articles from pool
-    if (articles.length === 0) {
+    // Skip title filtering when pool is already small (free-tier cap) —
+    // the search query already guarantees relevance.
+    let articles
+    if (pool.length < pageSize) {
       articles = pool.map(a => normalizeArticle(a, lang))
+    } else {
+      articles = pool
+        .filter(a => wcFilter.test(a.title) || wcFilter.test(a.description || ''))
+        .map(a => normalizeArticle(a, lang))
+
+      if (articles.length < 3) {
+        articles = pool
+          .filter(a => fallback.test(a.title) || fallback.test(a.description || ''))
+          .map(a => normalizeArticle(a, lang))
+      }
+
+      // Last resort: return all sports articles from pool
+      if (articles.length === 0) {
+        articles = pool.map(a => normalizeArticle(a, lang))
+      }
     }
 
     return articles.slice(0, pageSize)
