@@ -29,6 +29,12 @@ def create_app():
 
     app.config['SQLALCHEMY_DATABASE_URI']        = db_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    # Prevent stale connections: test before use, recycle every 5 min
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,
+        'pool_recycle':  300,
+        'pool_timeout':  20,
+    }
 
     # ── JWT ───────────────────────────────────────────────────────────
     app.config['JWT_SECRET_KEY']         = os.getenv('JWT_SECRET_KEY', 'dev-secret-CHANGE-IN-PROD')
@@ -58,6 +64,12 @@ def create_app():
     bcrypt.init_app(app)
     jwt.init_app(app)
     mail.init_app(app)
+
+    # ── Health check (Railway uses this to verify the app is ready) ──
+    from flask import jsonify as _jsonify
+    @app.route('/health')
+    def health():
+        return _jsonify({'status': 'ok'}), 200
 
     # ── Blueprints ────────────────────────────────────────────────────
     from routes.auth          import auth_bp
