@@ -28,18 +28,18 @@ The ultimate companion app for FIFA World Cup 2026. Follow every match, team and
 
 | Feature | Description |
 |---|---|
-| ⚽ Live Matches | Real-time match data with statistics |
-| 🛡️ Teams | Profiles of all 48 World Cup 2026 teams |
-| 👥 Players | Player database with detailed metrics |
-| 🏆 Bracket | Live group stage and knockout bracket |
-| 📰 News | Real-time World Cup news feed |
-| 🌍 FIFA Ranking | Official FIFA world ranking |
-| 🧠 Trivia | AI-generated interactive football trivia |
-| 🤖 AI Predictor | Claude-powered match outcome predictor |
-| ❤️ Favorites | Cloud-synced favorites (teams, players, matches, news) |
-| 🔔 Notifications | Email alerts 1h before favorite matches kick off |
-| 👤 User Auth | Full auth system: register, login, forgot/reset password |
-| ☕ About | Creator page with Buy Me a Coffee support |
+| Live Matches | Real-time match data with statistics |
+| Teams | Profiles of all 48 World Cup 2026 teams |
+| Players | Player database with detailed metrics |
+| Bracket | Live group stage and knockout bracket |
+| News | Real-time World Cup news feed |
+| FIFA Ranking | Official FIFA world ranking |
+| Trivia | AI-generated interactive football trivia |
+| AI Predictor | Claude-powered match outcome predictor |
+| Favorites | Cloud-synced favorites (teams, players, matches, news) |
+| Notifications | Email alerts 1h before favorite matches kick off |
+| User Auth | Full auth system: register, login, forgot/reset password |
+| About | Creator page with Buy Me a Coffee support |
 
 ---
 
