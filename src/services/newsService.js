@@ -51,6 +51,34 @@ function mockByCategory(category) {
   return catMap[category]?.length ? catMap[category] : NEWS
 }
 
+// ─── Multi-page fetch helper ──────────────────────────
+// TheNewsAPI free tier caps at 3 articles per page regardless of the limit
+// param. Fetching multiple pages in parallel multiplies the result pool.
+async function fetchNewsPool(baseParams, numPages = 3) {
+  const requests = Array.from({ length: numPages }, (_, i) => {
+    const p = new URLSearchParams(baseParams)
+    p.set('page', String(i + 1))
+    return get(`${BASE}?${p}`).catch(() => null)
+  })
+
+  const responses = await Promise.all(requests)
+  const seen      = new Set()
+  const pool      = []
+
+  for (const data of responses) {
+    if (!data?.data) continue
+    for (const a of data.data) {
+      const key = a.uuid || a.url
+      if (key && !seen.has(key) && a.title && a.title !== '[Removed]') {
+        seen.add(key)
+        pool.push(a)
+      }
+    }
+  }
+
+  return pool
+}
+
 // ─── GET /news/all ───────────────────────────────────
 export async function getNews(category = 'all', lang = 'en', pageSize = 18) {
   if (isMock) return mockByCategory(category)
@@ -61,40 +89,35 @@ export async function getNews(category = 'all', lang = 'en', pageSize = 18) {
   const wcFilter = isEs ? WC_ES    : WC_EN
   const fallback = isEs ? SOCCER_ES : SOCCER_EN
 
-  const params = new URLSearchParams({
+  // Fetch 3 pages in parallel — gives up to 9 articles on free tier,
+  // more on paid plans where limit > 3.
+  const baseParams = {
     api_token:  KEY,
     search:     q,
     categories: 'sports',
     language:   isEs ? 'es' : 'en',
-    limit:      String(pageSize),
+    limit:      String(Math.min(pageSize, 10)),
     sort:       'published_at',
-  })
-  const url = `${BASE}?${params}`
+  }
 
   try {
-    const data = await get(url)
+    const pool = await fetchNewsPool(baseParams, 3)
 
-    // TheNewsAPI devuelve error con campo "message" y sin "data"
-    if (!data.data) {
-      console.warn('[newsService] TheNewsAPI error:', data.message || 'unknown', '— using mock data')
+    if (pool.length === 0) {
+      console.warn('[newsService] TheNewsAPI returned no articles — using mock data')
       return mockByCategory(category)
     }
 
-    const pool = data.data.filter(a => a.title && a.title !== '[Removed]')
-
-    // When the API returned fewer articles than requested (free-tier cap or sparse
-    // results), trust the search query and skip title-level filtering entirely —
-    // otherwise we'd drop already-relevant articles down to nothing.
+    // When the pool is still smaller than requested (heavy free-tier cap),
+    // trust the search query and skip the secondary title filter.
     let articles
     if (pool.length < pageSize) {
       articles = pool.map(a => normalizeArticle(a, lang))
     } else {
-      // First pass: articles that explicitly mention World Cup 2026
       articles = pool
         .filter(a => wcFilter.test(a.title) || wcFilter.test(a.description || ''))
         .map(a => normalizeArticle(a, lang))
 
-      // Second pass: fill remaining slots with general soccer articles (deduped)
       if (articles.length < pageSize) {
         const seen = new Set(articles.map(a => a.id))
         const extra = pool
@@ -104,14 +127,10 @@ export async function getNews(category = 'all', lang = 'en', pageSize = 18) {
         articles = [...articles, ...extra]
       }
 
-      // Last resort: return everything from pool
-      if (articles.length === 0) {
-        articles = pool.map(a => normalizeArticle(a, lang))
-      }
+      if (articles.length === 0) articles = pool.map(a => normalizeArticle(a, lang))
     }
 
     if (articles.length === 0) return mockByCategory(category)
-
     return articles.slice(0, pageSize)
   } catch (err) {
     console.warn('[newsService] Request failed, using mock data:', err.message)
@@ -120,31 +139,28 @@ export async function getNews(category = 'all', lang = 'en', pageSize = 18) {
 }
 
 export async function getHeadlines(lang = 'en', pageSize = 6) {
-  if (isMock) return NEWS.slice(0, 6)
+  if (isMock) return NEWS.slice(0, pageSize)
 
   const isEs     = lang === 'es'
   const q        = isEs ? 'Copa del Mundo 2026' : 'World Cup 2026'
   const wcFilter = isEs ? WC_ES : WC_EN
   const fallback = isEs ? SOCCER_ES : SOCCER_EN
 
-  const params = new URLSearchParams({
+  // 2 pages in parallel for the home headline strip
+  const baseParams = {
     api_token:  KEY,
     search:     q,
     categories: 'sports',
     language:   isEs ? 'es' : 'en',
-    limit:      String(pageSize + 6),   // fetch extra, filter down
+    limit:      String(Math.max(pageSize, 5)),
     sort:       'published_at',
-  })
-  const url = `${BASE}?${params}`
+  }
 
   try {
-    const data = await get(url)
-    if (!data.data) return NEWS.slice(0, pageSize)
+    const pool = await fetchNewsPool(baseParams, 2)
 
-    const pool = data.data.filter(a => a.title && a.title !== '[Removed]')
+    if (pool.length === 0) return NEWS.slice(0, pageSize)
 
-    // Skip title filtering when pool is already small (free-tier cap) —
-    // the search query already guarantees relevance.
     let articles
     if (pool.length < pageSize) {
       articles = pool.map(a => normalizeArticle(a, lang))
@@ -159,10 +175,7 @@ export async function getHeadlines(lang = 'en', pageSize = 6) {
           .map(a => normalizeArticle(a, lang))
       }
 
-      // Last resort: return all sports articles from pool
-      if (articles.length === 0) {
-        articles = pool.map(a => normalizeArticle(a, lang))
-      }
+      if (articles.length === 0) articles = pool.map(a => normalizeArticle(a, lang))
     }
 
     return articles.slice(0, pageSize)
