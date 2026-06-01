@@ -171,7 +171,7 @@ export default function Teams() {
                 aria-label={isFav('teams', team.id) ? t('favorites','remove') : t('common','add_fav')}
                 style={{ marginTop: 12 }}
               >
-                ♥
+                <i className={`fa-${isFav('teams', team.id) ? 'solid' : 'regular'} fa-heart`} />
               </button>
             </article>
           ))}

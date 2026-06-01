@@ -28,7 +28,7 @@ const translations = {
     },
     favorites: {
       no_favs: 'No favorites yet',
-      no_favs_sub: 'Tap the ♥ button on any team, player or match to save them here.',
+      no_favs_sub: 'Tap the heart button on any team, player or match to save them here.',
       browse_teams: 'Browse Teams', browse_players: 'Browse Players',
       tab_teams: 'Teams', tab_players: 'Players', tab_matches: 'Matches',
       no_teams: 'No favorite teams yet.',
@@ -113,7 +113,7 @@ const translations = {
     },
     favorites: {
       no_favs: 'Aún no hay favoritos',
-      no_favs_sub: 'Toca el botón ♥ en cualquier equipo, jugador o partido para guardarlo aquí.',
+      no_favs_sub: 'Toca el botón de corazón en cualquier equipo, jugador o partido para guardarlo aquí.',
       browse_teams: 'Ver Equipos', browse_players: 'Ver Jugadores',
       tab_teams: 'Equipos', tab_players: 'Jugadores', tab_matches: 'Partidos',
       no_teams: 'Sin equipos favoritos.',

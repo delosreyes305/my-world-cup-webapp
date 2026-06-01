@@ -118,7 +118,7 @@ export function AppProvider({ children }) {
           method: 'POST',
           body:   JSON.stringify({ type: singularType, item_id: apiId, item_data: item }),
         })
-        showToast(type === 'articles' ? '📰 Noticia guardada ♥' : `${item.name || 'Item'} agregado a favoritos ♥`)
+        showToast(type === 'articles' ? '📰 Noticia guardada' : `${item.name || 'Item'} agregado a favoritos`)
       }
     } catch {
       // Revertir en caso de error

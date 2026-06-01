@@ -115,7 +115,7 @@ export default function AboutPage() {
           <div className="about-creator-info">
             <div className="about-creator-name">Erick De los Reyes</div>
             <div className="about-creator-role">
-              {es ? 'Desarrollador & Diseñador · Miami, FL' : 'Developer & Designer · Miami, FL'}
+              {es ? 'Full Stack Developer · Miami, FL' : 'Full Stack Developer · Miami, FL'}
             </div>
             <p className="about-creator-bio">
               {es

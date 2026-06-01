@@ -307,7 +307,7 @@ export default function Players() {
                   aria-label={lang === 'es'
                     ? `${isFav('players', player.id) ? 'Quitar de' : 'Agregar a'} favoritos`
                     : `${isFav('players', player.id) ? 'Remove from' : 'Add to'} favorites`}>
-                  ♥
+                  <i className={`fa-${isFav('players', player.id) ? 'solid' : 'regular'} fa-heart`} />
                 </button>
               </article>
             ))}
