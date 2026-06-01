@@ -386,6 +386,11 @@ export default function Home() {
                     background: i === 0 ? 'rgba(240,180,41,0.06)' : 'transparent',
                     borderLeft: i === 0 ? '3px solid var(--gold)' : '3px solid transparent',
                     borderBottom: i < rankedTeams.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    borderRadius: i === 0
+                      ? 'var(--radius) var(--radius) 0 0'
+                      : i === rankedTeams.length - 1
+                        ? '0 0 var(--radius) var(--radius)'
+                        : 0,
                     transition: 'background 0.2s, transform 0.2s cubic-bezier(0.4,0,0.2,1)',
                   }}>
 
@@ -478,6 +483,11 @@ export default function Home() {
                   background: i === 0 ? 'rgba(240,180,41,0.06)' : 'transparent',
                   borderLeft: i === 0 ? '3px solid var(--gold)' : '3px solid transparent',
                   borderBottom: i < topPlayers.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                  borderRadius: i === 0
+                    ? 'var(--radius) var(--radius) 0 0'
+                    : i === topPlayers.length - 1
+                      ? '0 0 var(--radius) var(--radius)'
+                      : 0,
                   transition:'background 0.2s, transform 0.2s cubic-bezier(0.4,0,0.2,1)',
                 }}>
 

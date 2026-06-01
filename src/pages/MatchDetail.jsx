@@ -303,47 +303,8 @@ export default function MatchDetail() {
         </div>
       </div>
 
-      {/* ── Stats + Timeline ── */}
+      {/* ── Timeline + Stats ── */}
       <div className="grid-2 mb-16">
-
-        {/* Statistics */}
-        <div className="card">
-          <h3 className="fw-600 mb-12" style={{ fontSize: 15 }}>
-            {t('match','statistics')}
-          </h3>
-
-          {status === 'upcoming' ? (
-            <div className="caption" style={{ color: 'var(--text3)', padding: '24px 0', textAlign: 'center' }}>
-              {t('match','stats_upcoming')}
-            </div>
-          ) : (
-            <ApiStatus loading={statsLoad} error={statsErr} data={stats}
-              skeleton="none" skeletonCount={5} skeletonHeight={28}>
-              {stats && (
-                <>
-                  {/* Team name labels */}
-                  <div className="flex-between mb-16" style={{ fontSize: 11, fontWeight: 700 }}>
-                    <span style={{ color: 'var(--gold)' }}>{team1}</span>
-                    <span style={{ color: 'var(--text3)', fontWeight: 400, fontSize: 10 }}>
-                      {lang === 'es' ? 'vs' : 'vs'}
-                    </span>
-                    <span style={{ color: 'var(--blue)' }}>{team2}</span>
-                  </div>
-
-                  <StatBar label={lang === 'es' ? 'Posesión'     : 'Possession'}   v1={stats.possession?.home}    v2={stats.possession?.away}    unit="%" />
-                  <StatBar label={lang === 'es' ? 'Tiros'        : 'Shots'}        v1={stats.shots?.home}         v2={stats.shots?.away} />
-                  <StatBar label={lang === 'es' ? 'A puerta'     : 'On Target'}    v1={stats.shotsOnTarget?.home} v2={stats.shotsOnTarget?.away} />
-                  <StatBar label={lang === 'es' ? 'Córners'      : 'Corners'}      v1={stats.corners?.home}       v2={stats.corners?.away} />
-                  <StatBar label={lang === 'es' ? 'Faltas'       : 'Fouls'}        v1={stats.fouls?.home}         v2={stats.fouls?.away} />
-                  <StatBar label={lang === 'es' ? 'T. amarillas' : 'Yellow Cards'} v1={stats.yellowCards?.home}   v2={stats.yellowCards?.away} />
-                  {(stats.xg?.home || stats.xg?.away) && (
-                    <StatBar label="xG" v1={stats.xg?.home} v2={stats.xg?.away} />
-                  )}
-                </>
-              )}
-            </ApiStatus>
-          )}
-        </div>
 
         {/* Timeline */}
         <div className="card">
@@ -383,6 +344,45 @@ export default function MatchDetail() {
                 </div>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Statistics */}
+        <div className="card">
+          <h3 className="fw-600 mb-12" style={{ fontSize: 15 }}>
+            {t('match','statistics')}
+          </h3>
+
+          {status === 'upcoming' ? (
+            <div className="caption" style={{ color: 'var(--text3)', padding: '24px 0', textAlign: 'center' }}>
+              {t('match','stats_upcoming')}
+            </div>
+          ) : (
+            <ApiStatus loading={statsLoad} error={statsErr} data={stats}
+              skeleton="none" skeletonCount={5} skeletonHeight={28}>
+              {stats && (
+                <>
+                  {/* Team name labels */}
+                  <div className="flex-between mb-16" style={{ fontSize: 11, fontWeight: 700 }}>
+                    <span style={{ color: 'var(--gold)' }}>{team1}</span>
+                    <span style={{ color: 'var(--text3)', fontWeight: 400, fontSize: 10 }}>
+                      {lang === 'es' ? 'vs' : 'vs'}
+                    </span>
+                    <span style={{ color: 'var(--blue)' }}>{team2}</span>
+                  </div>
+
+                  <StatBar label={lang === 'es' ? 'Posesión'     : 'Possession'}   v1={stats.possession?.home}    v2={stats.possession?.away}    unit="%" />
+                  <StatBar label={lang === 'es' ? 'Tiros'        : 'Shots'}        v1={stats.shots?.home}         v2={stats.shots?.away} />
+                  <StatBar label={lang === 'es' ? 'A puerta'     : 'On Target'}    v1={stats.shotsOnTarget?.home} v2={stats.shotsOnTarget?.away} />
+                  <StatBar label={lang === 'es' ? 'Córners'      : 'Corners'}      v1={stats.corners?.home}       v2={stats.corners?.away} />
+                  <StatBar label={lang === 'es' ? 'Faltas'       : 'Fouls'}        v1={stats.fouls?.home}         v2={stats.fouls?.away} />
+                  <StatBar label={lang === 'es' ? 'T. amarillas' : 'Yellow Cards'} v1={stats.yellowCards?.home}   v2={stats.yellowCards?.away} />
+                  {(stats.xg?.home || stats.xg?.away) && (
+                    <StatBar label="xG" v1={stats.xg?.home} v2={stats.xg?.away} />
+                  )}
+                </>
+              )}
+            </ApiStatus>
           )}
         </div>
       </div>

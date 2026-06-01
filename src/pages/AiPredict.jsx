@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
+import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
 import { getTeams } from '../services/sportsService'
 import { getMatchPredictionAI } from '../services/aiService'
@@ -63,8 +64,9 @@ function parseNumericScore(score) {
 }
 
 export default function AiPredict() {
-  const { t, lang } = useLang()
-  const { state }   = useLocation()
+  const { t, lang }        = useLang()
+  const { user, openAuthModal } = useAuth()
+  const { state }          = useLocation()
 
   const { data: teamsRaw, loading: teamsLoad } = useApi(getTeams, { ttl: 3_600_000 })
   const teams = useMemo(() =>
@@ -148,6 +150,40 @@ export default function AiPredict() {
       setTimeout(() => setCopied(false), 2500)
     })
   }
+
+  // ── Auth gate ─────────────────────────────────────────
+  if (!user) return (
+    <div className="page-content page-enter" style={{ textAlign: 'center', padding: '80px 24px' }}>
+      <div style={{ position: 'relative', display: 'inline-flex', justifyContent: 'center', marginBottom: 20 }}>
+        <i className="fa-solid fa-robot" style={{ fontSize: 52, color: 'var(--gold)', opacity: 0.85 }} />
+        <span style={{
+          position: 'absolute', bottom: -4, right: -10,
+          background: 'var(--card)', borderRadius: '50%', padding: '4px 5px', lineHeight: 1,
+          border: '1px solid rgba(240,180,41,0.2)',
+        }}>
+          <i className="fa-solid fa-lock" style={{ fontSize: 16, color: 'var(--gold)' }} />
+        </span>
+      </div>
+      <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>
+        {lang === 'es' ? 'Crea una cuenta para predecir con IA' : 'Create an account to predict with AI'}
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.55, marginBottom: 28, maxWidth: 340, margin: '0 auto 28px' }}>
+        {lang === 'es'
+          ? 'Inicia sesión o crea una cuenta gratis para acceder al predictor de partidos impulsado por Claude AI.'
+          : 'Sign in or create a free account to access the match predictor powered by Claude AI.'}
+      </p>
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <button className="btn btn-gold" onClick={() => openAuthModal('signup')}>
+          <i className="fa-solid fa-user-plus" style={{ marginRight: 8 }} />
+          {lang === 'es' ? 'Crear cuenta' : 'Create account'}
+        </button>
+        <button className="btn btn-outline" onClick={() => openAuthModal('signin')}>
+          <i className="fa-solid fa-right-to-bracket" style={{ marginRight: 8 }} />
+          {lang === 'es' ? 'Iniciar sesión' : 'Sign In'}
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="page-content page-enter">

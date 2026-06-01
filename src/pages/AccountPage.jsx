@@ -466,7 +466,7 @@ function EmptyFavs({ type }) {
     <div className="account-favs-empty">
       <div className="account-favs-empty-icon"><i className={`fa-solid ${icons[type] || 'fa-heart'}`} /></div>
       <div className="account-favs-empty-title">No hay favoritos aquí aún</div>
-      <div style={{ fontSize: 12 }}>Agrega tocando el botón ♥ en cualquier equipo, jugador o partido.</div>
+      <div style={{ fontSize: 12 }}>Agrega tocando el <i className="fa-regular fa-heart" /> en cualquier equipo, jugador o partido.</div>
     </div>
   )
 }
@@ -613,14 +613,30 @@ export default function AccountPage() {
       )}
 
       {/* ── Donate ── */}
-      <a
-        href="https://buymeacoffee.com/delosreyes305"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="account-donate-btn"
-      >
-        ☕ {es ? 'Invítame un café' : 'Buy me a coffee'}
-      </a>
+      <div className="card mt-24" style={{
+        textAlign: 'center',
+        padding: '24px 20px',
+        background: 'linear-gradient(135deg, rgba(240,180,41,0.07), rgba(240,180,41,0.02))',
+        border: '1px solid rgba(240,180,41,0.18)',
+      }}>
+        <div style={{ fontSize: 32, marginBottom: 10 }}>☕</div>
+        <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', marginBottom: 6 }}>
+          {es ? '¿Te gusta la app?' : 'Enjoying the app?'}
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.55, marginBottom: 18, maxWidth: 300, margin: '0 auto 18px' }}>
+          {es
+            ? 'Si la app te es útil puedes invitarme un café, lo agradezco mucho 😊'
+            : 'If you find the app useful, consider buying me a coffee — it means a lot!'}
+        </div>
+        <a
+          href="https://buymeacoffee.com/delosreyes305"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="account-donate-btn"
+        >
+          ☕ {es ? 'Invítame un café' : 'Buy me a coffee'}
+        </a>
+      </div>
 
     </div>
   )

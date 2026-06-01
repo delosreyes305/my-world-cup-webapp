@@ -126,18 +126,20 @@ export default function NewsReader({ article, onClose }) {
             {t('news', 'preview_note')}
           </p>
 
-          {/* Footer actions */}
-          <div className="news-reader-footer">
+          {/* Footer actions — read full takes its own row on mobile */}
+          <div className="news-reader-footer" style={{ flexWrap: 'wrap' }}>
             <button
               className="btn btn-gold"
               onClick={openExternal}
-              style={{ flex: 1 }}
+              style={{ flex: '1 1 100%' }}
             >
-              {t('news', 'read_full')} ↗
+              <i className="fa-solid fa-arrow-up-right-from-square" style={{ marginRight: 8 }} />
+              {t('news', 'read_full')}
             </button>
             <button
               className={`btn ${saved ? 'btn-gold' : 'btn-ghost'}`}
               onClick={() => toggleFav('articles', article)}
+              style={{ flex: 1 }}
               aria-label={saved
                 ? (lang === 'es' ? 'Quitar de guardados' : 'Remove from saved')
                 : (lang === 'es' ? 'Guardar noticia'     : 'Save article')}
@@ -150,6 +152,7 @@ export default function NewsReader({ article, onClose }) {
             <button
               className="btn btn-ghost"
               onClick={onClose}
+              style={{ flex: 1 }}
             >
               ← {t('common', 'back')}
             </button>

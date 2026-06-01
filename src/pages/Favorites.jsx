@@ -151,7 +151,7 @@ export default function Favorites() {
           ? <TabEmpty
               icon="fa-shield-halved"
               title={t('favorites', 'no_teams')}
-              sub={lang === 'es' ? 'Toca el ♥ en cualquier equipo para guardarlo.' : 'Tap ♥ on any team to save it.'}
+              sub={lang === 'es' ? 'Toca el corazón en cualquier equipo para guardarlo.' : 'Tap the heart on any team to save it.'}
             />
           : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
               {favTeams.map(team => (
@@ -187,7 +187,7 @@ export default function Favorites() {
           ? <TabEmpty
               icon="fa-users"
               title={t('favorites', 'no_players')}
-              sub={lang === 'es' ? 'Toca el ♥ en cualquier jugador para guardarlo.' : 'Tap ♥ on any player to save them.'}
+              sub={lang === 'es' ? 'Toca el corazón en cualquier jugador para guardarlo.' : 'Tap the heart on any player to save them.'}
             />
           : <div className="grid-2">
               {favPlayers.map(player => (
@@ -229,7 +229,7 @@ export default function Favorites() {
           ? <TabEmpty
               icon="fa-futbol"
               title={t('favorites', 'no_matches')}
-              sub={lang === 'es' ? 'Toca el ♥ en cualquier partido para guardarlo.' : 'Tap ♥ on any match to save it.'}
+              sub={lang === 'es' ? 'Toca el corazón en cualquier partido para guardarlo.' : 'Tap the heart on any match to save it.'}
             />
           : <div className="grid-2">
               {favMatches.map(m => <MatchCard key={m.id} match={m} />)}

@@ -87,7 +87,7 @@ export default function MatchCard({ match }) {
         aria-label={`${isFav('matches', id) ? 'Remove from' : 'Add to'} favorites`}
         style={{ position: 'absolute', bottom: 12, right: 12 }}
       >
-        ♥
+        <i className={`fa-${isFav('matches', id) ? 'solid' : 'regular'} fa-heart`} />
       </button>
     </article>
   )
