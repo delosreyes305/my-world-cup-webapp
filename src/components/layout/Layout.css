@@ -175,8 +175,9 @@
     left: 0;
     right: 0;
     z-index: 200;
-    background: rgba(10, 14, 26, 0.97);
-    backdrop-filter: blur(24px);
+    /* Solid background — backdrop-filter creates a GPU composite layer
+       that can break position:fixed on mobile browsers */
+    background: rgb(10, 14, 26);
     border-top: 1px solid rgba(240, 180, 41, 0.12);
     overflow-x: auto;
     scrollbar-width: none;

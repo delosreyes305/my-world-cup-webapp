@@ -564,8 +564,8 @@ export default function Home() {
               key={n.id || i}
               className="news-article-card card card-clickable"
               tabIndex={0}
-              onClick={() => user ? setReading(n) : setAuthRequiredOpen(true)}
-              onKeyDown={e => e.key === 'Enter' && (user ? setReading(n) : setAuthRequiredOpen(true))}
+              onClick={() => user ? setReading(n) : setAuthRequiredOpen('news')}
+              onKeyDown={e => e.key === 'Enter' && (user ? setReading(n) : setAuthRequiredOpen('news'))}
               aria-label={n.title}
             >
               {n.image ? (
