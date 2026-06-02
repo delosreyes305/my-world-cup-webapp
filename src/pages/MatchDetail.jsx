@@ -201,13 +201,13 @@ export default function MatchDetail() {
         {/* Teams + Score */}
         <div style={{
           display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', gap: 20,
+          justifyContent: 'space-between', gap: 8,
           textAlign: 'center', marginBottom: 20,
         }}>
           {/* Home team — clickable → TeamDetail */}
           <div
             style={{
-              flex: 1, cursor: navTeam1 ? 'pointer' : 'default',
+              flex: 1, minWidth: 0, cursor: navTeam1 ? 'pointer' : 'default',
               transition: 'opacity 0.15s',
             }}
             onClick={() => goToTeam(navTeam1, team1, flag1)}
@@ -218,8 +218,13 @@ export default function MatchDetail() {
             onMouseEnter={e => { if (navTeam1) e.currentTarget.style.opacity = '0.75' }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
           >
-            <TeamFlag flag={flag1} name={team1} size={64} />
-            <h2 className="fw-600" style={{ fontSize: 18, lineHeight: 1.3 }}>
+            <TeamFlag flag={flag1} name={team1} size={52} />
+            <h2 className="fw-600" style={{
+              fontSize: 'clamp(13px, 3.5vw, 18px)',
+              lineHeight: 1.3,
+              overflowWrap: 'break-word',
+              wordBreak: 'break-word',
+            }}>
               {team1}
               {navTeam1 && <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4, verticalAlign: 'middle' }}>↗</span>}
             </h2>
@@ -255,7 +260,7 @@ export default function MatchDetail() {
           {/* Away team — clickable → TeamDetail */}
           <div
             style={{
-              flex: 1, cursor: navTeam2 ? 'pointer' : 'default',
+              flex: 1, minWidth: 0, cursor: navTeam2 ? 'pointer' : 'default',
               transition: 'opacity 0.15s',
             }}
             onClick={() => goToTeam(navTeam2, team2, flag2)}
@@ -266,8 +271,13 @@ export default function MatchDetail() {
             onMouseEnter={e => { if (navTeam2) e.currentTarget.style.opacity = '0.75' }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
           >
-            <TeamFlag flag={flag2} name={team2} size={64} />
-            <h2 className="fw-600" style={{ fontSize: 18, lineHeight: 1.3 }}>
+            <TeamFlag flag={flag2} name={team2} size={52} />
+            <h2 className="fw-600" style={{
+              fontSize: 'clamp(13px, 3.5vw, 18px)',
+              lineHeight: 1.3,
+              overflowWrap: 'break-word',
+              wordBreak: 'break-word',
+            }}>
               {team2}
               {navTeam2 && <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4, verticalAlign: 'middle' }}>↗</span>}
             </h2>
