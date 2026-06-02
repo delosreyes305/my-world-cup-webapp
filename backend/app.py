@@ -55,6 +55,8 @@ def create_app():
                 'http://localhost:3000',
                 'http://localhost:5173',
                 'https://*.vercel.app',
+                'https://myfootballworldcup.com',
+                'https://www.myfootballworldcup.com',
             ]
         }
     })

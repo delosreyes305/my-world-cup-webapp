@@ -36,7 +36,7 @@ function loadLocalFavs() {
 }
 
 async function apiFetch(token, path, options = {}) {
-  return fetch(path, {
+  const res = await fetch(path, {
     ...options,
     headers: {
       'Content-Type':  'application/json',
@@ -44,6 +44,13 @@ async function apiFetch(token, path, options = {}) {
       ...options.headers,
     },
   })
+  // Throw on non-2xx so the catch block in toggleFav can revert the
+  // optimistic update instead of silently leaving the UI out of sync.
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error || body.message || `Server error ${res.status}`)
+  }
+  return res
 }
 
 export function AppProvider({ children }) {
