@@ -26,6 +26,12 @@ const headers = { 'x-apisports-key': KEY }
 const WC_LEAGUE  = 1
 const WC_SEASON  = 2026
 
+// ─── In-memory squad cache ────────────────────────────
+// Populated automatically whenever a team squad is loaded.
+// Enables instant client-side player search across any
+// teams the user has already browsed this session.
+const squadCache = new Map() // teamId (number) → Player[]
+
 // ─────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────
@@ -503,7 +509,10 @@ export async function getAllTeamPlayers(teamId) {
         .flatMap(p => (p.response || []).map(r => normalizePlayer(r, teamId)))
         .sort(byLastName)
 
-      if (players.length > 0) return players
+      if (players.length > 0) {
+        squadCache.set(Number(teamId), players)  // cache for global search
+        return players
+      }
     } catch { /* try next season */ }
   }
 
@@ -525,10 +534,25 @@ export async function searchPlayers(query) {
   const q = (query || '').trim()
   if (q.length < 3) return []
 
-  // Try in order until we get results:
-  //  1. WC 2026 — registered squad data for the current tournament
-  //  2. 2025 club season — most recent stats (qualifiers, Nations League, etc.)
-  //  3. 2024 club season — fallback for players with incomplete 2025 data
+  const qLower = q.toLowerCase()
+
+  // ── Pass 1: search across any team squads already cached this session ──
+  // This gives instant results after the user has visited any team page.
+  if (squadCache.size > 0) {
+    const hits = []
+    const seen = new Set()
+    for (const players of squadCache.values()) {
+      for (const p of players) {
+        if (!seen.has(p.id) && p.name?.toLowerCase().includes(qLower)) {
+          seen.add(p.id)
+          hits.push(p)
+        }
+      }
+    }
+    if (hits.length > 0) return hits.slice(0, 20)
+  }
+
+  // ── Pass 2: API search — try WC 2026 then recent seasons as fallback ──
   const attempts = [
     `${BASE}/players?search=${encodeURIComponent(q)}&league=${WC_LEAGUE}&season=${WC_SEASON}`,
     `${BASE}/players?search=${encodeURIComponent(q)}&season=${WC_SEASON - 1}`,
