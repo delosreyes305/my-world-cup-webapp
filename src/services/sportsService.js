@@ -27,10 +27,11 @@ const WC_LEAGUE  = 1
 const WC_SEASON  = 2026
 
 // ─── In-memory squad cache ────────────────────────────
-// Populated automatically whenever a team squad is loaded.
-// Enables instant client-side player search across any
-// teams the user has already browsed this session.
+// Populated whenever a team squad is loaded (by team page visit or
+// background preload). Enables client-side player search without
+// requiring a country selection.
 const squadCache = new Map() // teamId (number) → Player[]
+let preloadStarted = false   // guard — run preload only once per session
 
 // ─────────────────────────────────────────────────────
 // HELPERS
@@ -517,6 +518,30 @@ export async function getAllTeamPlayers(teamId) {
   }
 
   return []
+}
+
+/**
+ * Silently pre-loads squads for the top N teams by FIFA rank so that
+ * global player search works without the user having to pick a country.
+ * Runs only once per session and only in API mode.
+ * @param {Array} teams  — full teams array from getTeams()
+ * @param {number} limit — how many top teams to preload (default 12)
+ */
+export async function preloadTopSquads(teams, limit = 12) {
+  if (isMock || preloadStarted || !teams?.length) return
+  preloadStarted = true
+
+  const sorted = [...teams]
+    .filter(t => t.id)
+    .sort((a, b) => (a.rank || 999) - (b.rank || 999))
+    .slice(0, limit)
+
+  // Load in two batches of 6 to avoid hitting rate limits
+  const batch1 = sorted.slice(0, 6)
+  const batch2 = sorted.slice(6)
+
+  await Promise.allSettled(batch1.map(t => getAllTeamPlayers(t.id)))
+  await Promise.allSettled(batch2.map(t => getAllTeamPlayers(t.id)))
 }
 
 /**

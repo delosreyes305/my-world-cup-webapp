@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../context/AppContext'
 import { useLang } from '../../context/LangContext'
 import { useApi } from '../../hooks/useApi'
-import { getTeams, getAllFixtures, searchPlayers, IS_MOCK } from '../../services/sportsService'
+import { getTeams, getAllFixtures, searchPlayers, preloadTopSquads, IS_MOCK } from '../../services/sportsService'
 import { getHeadlines } from '../../services/newsService'
 import { TEAMS, PLAYERS, MATCHES } from '../../data/mockData'
 import './SearchOverlay.css'
@@ -64,6 +64,11 @@ export default function SearchOverlay() {
   const { data: allTeams    } = useApi(getTeams,      { ttl: 3_600_000 })
   const { data: allFixtures } = useApi(getAllFixtures, { ttl: 1_800_000 })
   const { data: headlines   } = useApi(getHeadlines, lang, { ttl: 300_000 })
+
+  // ── Trigger squad preload so player search works immediately ──
+  useEffect(() => {
+    if (!IS_MOCK && allTeams?.length) preloadTopSquads(allTeams)
+  }, [allTeams])
 
   // ── Player API search (debounced, min 3 chars) ────────
   const skipPlayerSearch = q.length < 3

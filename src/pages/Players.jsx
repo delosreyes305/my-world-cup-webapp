@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useApp } from '../context/AppContext'
 import { useApi } from '../hooks/useApi'
-import { getAllTeamPlayers, searchPlayers, getTeams, IS_MOCK, TEAM_ISO } from '../services/sportsService'
+import { getAllTeamPlayers, searchPlayers, preloadTopSquads, getTeams, IS_MOCK, TEAM_ISO } from '../services/sportsService'
 import ApiStatus from '../components/common/ApiStatus'
 
 const POSITIONS = ['All', 'FW', 'MF', 'DF', 'GK']
@@ -58,6 +58,13 @@ export default function Players() {
   const countryList = useMemo(() =>
     teams ? [...teams].sort((a, b) => a.name.localeCompare(b.name)) : [],
   [teams])
+
+  // ── Background squad preload — runs once when teams are ready ───────────
+  // Silently fetches squads for the top 12 teams so global player search
+  // works without the user having to select a country first.
+  useEffect(() => {
+    if (!IS_MOCK && teams?.length) preloadTopSquads(teams)
+  }, [teams])
 
   // Derive selected team object from country name (API mode only)
   const selectedTeam = useMemo(() => {
