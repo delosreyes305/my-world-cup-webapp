@@ -47,8 +47,9 @@ async function apiFetch(token, path, options = {}) {
   // Throw on non-2xx so the catch block in toggleFav can revert the
   // optimistic update instead of silently leaving the UI out of sync.
   if (!res.ok) {
+    // flask-jwt-extended uses 'msg', our routes use 'error', some use 'message'
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.error || body.message || `Server error ${res.status}`)
+    throw new Error(body.error || body.msg || body.message || `Server error ${res.status}`)
   }
   return res
 }
@@ -127,8 +128,8 @@ export function AppProvider({ children }) {
         })
         showToast(type === 'articles' ? '📰 Noticia guardada' : `${item.name || 'Item'} agregado a favoritos`)
       }
-    } catch {
-      // Revertir en caso de error
+    } catch (err) {
+      // Revert optimistic update on error
       setFavorites(prev => {
         const list = prev[type] || []
         return {
@@ -136,7 +137,7 @@ export function AppProvider({ children }) {
           [type]: isIn ? [...list, item] : list.filter(x => x?.id !== item.id),
         }
       })
-      showToast('Error al actualizar favoritos')
+      showToast(err?.message || 'Error saving favorite')
     }
   }, [user, token, favorites, setAuthRequiredOpen, showToast])
 

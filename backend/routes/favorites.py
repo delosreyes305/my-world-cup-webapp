@@ -16,10 +16,9 @@ def get_favorites():
     user_id = int(get_jwt_identity())
     favs    = Favorite.query.filter_by(user_id=user_id).order_by(Favorite.created_at).all()
 
-    # Devuelve el mismo formato que usa AppContext: { teams: [...], players: [...], matches: [...] }
     result = {'teams': [], 'players': [], 'matches': [], 'articles': []}
     for fav in favs:
-        key = fav.type + 's'           # 'team' → 'teams', 'article' → 'articles', etc.
+        key = fav.type + 's'
         if key in result and fav.item_data:
             result[key].append(fav.item_data)
 
@@ -38,23 +37,31 @@ def add_favorite():
     item_data = data.get('item_data')
 
     if fav_type not in VALID_TYPES:
-        return jsonify({'error': 'type debe ser team, player o match'}), 400
+        return jsonify({'error': f'Invalid type: {fav_type}'}), 400
     if item_id is None or item_data is None:
-        return jsonify({'error': 'item_id e item_data son requeridos'}), 400
+        return jsonify({'error': 'item_id and item_data are required'}), 400
+
+    try:
+        item_id_int = int(item_id)
+    except (TypeError, ValueError):
+        return jsonify({'error': f'item_id must be an integer, got: {item_id}'}), 400
 
     fav = Favorite(
         user_id=user_id,
         type=fav_type,
-        item_id=int(item_id),
+        item_id=item_id_int,
         item_data=item_data,
     )
     try:
         db.session.add(fav)
         db.session.commit()
-        return jsonify({'message': 'Agregado a favoritos', 'favorite': fav.to_dict()}), 201
+        return jsonify({'message': 'Added to favorites', 'favorite': fav.to_dict()}), 201
     except IntegrityError:
         db.session.rollback()
-        return jsonify({'message': 'Ya está en favoritos'}), 200
+        return jsonify({'message': 'Already in favorites'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
 
 
 # ── DELETE /api/favorites/<type>/<item_id> ───────────────────────────
@@ -63,13 +70,17 @@ def add_favorite():
 def remove_favorite(fav_type, item_id):
     user_id = int(get_jwt_identity())
 
-    fav = Favorite.query.filter_by(
-        user_id=user_id, type=fav_type, item_id=item_id
-    ).first()
+    try:
+        fav = Favorite.query.filter_by(
+            user_id=user_id, type=fav_type, item_id=item_id
+        ).first()
 
-    if not fav:
-        return jsonify({'error': 'Favorito no encontrado'}), 404
+        if not fav:
+            return jsonify({'error': 'Favorite not found'}), 404
 
-    db.session.delete(fav)
-    db.session.commit()
-    return jsonify({'message': 'Eliminado de favoritos'}), 200
+        db.session.delete(fav)
+        db.session.commit()
+        return jsonify({'message': 'Removed from favorites'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
