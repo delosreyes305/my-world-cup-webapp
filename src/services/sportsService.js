@@ -443,13 +443,28 @@ export async function getTopScorers() {
   const topScorers = (topData.response || []).map(normalizePlayer)
   if (topScorers.length > 0) return topScorers
 
-  // 2. Pre-torneo: cargar squads de los primeros 3 equipos clasificados
+  // 2. Fallback — load players from a curated set of popular teams so the
+  // Top Players card always shows a representative cross-country mix.
   const teamsData = await get(
     `${BASE}/teams?league=${WC_LEAGUE}&season=${WC_SEASON}`,
     { headers }
   )
-  const teamIds = (teamsData.response || []).slice(0, 3).map(r => r.team.id)
-  if (!teamIds.length) return []
+  const allTeamEntries = (teamsData.response || []).map(r => ({ id: r.team.id, name: r.team.name }))
+  if (!allTeamEntries.length) return []
+
+  // Always include these teams — they have the most globally recognised players
+  const PRIORITY = ['Argentina', 'Brazil', 'France', 'Portugal', 'England', 'Spain', 'Germany']
+  const priorityIds = PRIORITY
+    .map(name => allTeamEntries.find(t => t.name === name)?.id)
+    .filter(Boolean)
+
+  // Fill remaining slots from whatever the API returned (no duplicates)
+  const extra = allTeamEntries
+    .filter(t => !priorityIds.includes(t.id))
+    .slice(0, Math.max(0, 5 - priorityIds.length))
+    .map(t => t.id)
+
+  const teamIds = [...priorityIds, ...extra].slice(0, 7)
 
   const pages = await Promise.all(
     teamIds.map(tid =>
