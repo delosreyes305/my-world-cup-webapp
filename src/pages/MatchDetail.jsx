@@ -222,8 +222,9 @@ export default function MatchDetail() {
             <h2 className="fw-600" style={{
               fontSize: 'clamp(13px, 3.5vw, 18px)',
               lineHeight: 1.3,
-              overflowWrap: 'break-word',
-              wordBreak: 'break-word',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}>
               {team1}
               {navTeam1 && <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4, verticalAlign: 'middle' }}>↗</span>}
@@ -275,8 +276,9 @@ export default function MatchDetail() {
             <h2 className="fw-600" style={{
               fontSize: 'clamp(13px, 3.5vw, 18px)',
               lineHeight: 1.3,
-              overflowWrap: 'break-word',
-              wordBreak: 'break-word',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             }}>
               {team2}
               {navTeam2 && <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4, verticalAlign: 'middle' }}>↗</span>}
