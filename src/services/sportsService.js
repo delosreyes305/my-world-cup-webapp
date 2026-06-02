@@ -26,12 +26,46 @@ const headers = { 'x-apisports-key': KEY }
 const WC_LEAGUE  = 1
 const WC_SEASON  = 2026
 
-// ─── In-memory squad cache ────────────────────────────
-// Populated whenever a team squad is loaded (by team page visit or
-// background preload). Enables client-side player search without
-// requiring a country selection.
-const squadCache = new Map() // teamId (number) → Player[]
-let preloadStarted = false   // guard — run preload only once per session
+// ─── Squad cache — memory + localStorage ─────────────
+// Memory cache: fast lookups this session.
+// localStorage: persists across sessions and browsers (Safari included).
+// Only stores the compact fields needed for search to keep storage small.
+const squadCache    = new Map() // teamId (number) → Player[]
+let   preloadStarted = false
+
+const LS_KEY = 'wc2026_squads_v1'
+const LS_TTL = 6 * 60 * 60 * 1000   // 6 hours
+
+// Compact player shape stored in localStorage (search-relevant fields only)
+const compactPlayer = p => ({
+  id: p.id, name: p.name, pos: p.pos, nation: p.nation,
+  photo: p.photo, emoji: p.emoji, age: p.age, club: p.club,
+})
+
+function hydrateFromStorage() {
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    if (!raw) return
+    const { ts, data } = JSON.parse(raw)
+    if (Date.now() - ts > LS_TTL) { localStorage.removeItem(LS_KEY); return }
+    for (const [id, players] of Object.entries(data)) {
+      if (!squadCache.has(Number(id))) squadCache.set(Number(id), players)
+    }
+  } catch { /* ignore */ }
+}
+
+function persistToStorage() {
+  try {
+    const data = {}
+    for (const [id, players] of squadCache.entries()) {
+      data[id] = players.map(compactPlayer)
+    }
+    localStorage.setItem(LS_KEY, JSON.stringify({ ts: Date.now(), data }))
+  } catch { /* storage full — skip silently */ }
+}
+
+// Hydrate on module load — Safari picks up Chrome's cached data instantly
+hydrateFromStorage()
 
 // ─────────────────────────────────────────────────────
 // HELPERS
@@ -511,7 +545,8 @@ export async function getAllTeamPlayers(teamId) {
         .sort(byLastName)
 
       if (players.length > 0) {
-        squadCache.set(Number(teamId), players)  // cache for global search
+        squadCache.set(Number(teamId), players)
+        persistToStorage()   // persist so other browsers/sessions benefit too
         return players
       }
     } catch { /* try next season */ }
