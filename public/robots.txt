@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Block private / auth pages from indexing
+Disallow: /account
+Disallow: /favorites
+Disallow: /reset-password
+
+Sitemap: https://www.myfootballworldcup.com/sitemap.xml
