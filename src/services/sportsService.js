@@ -435,32 +435,31 @@ export async function getTeamFixtures(teamId) {
 export async function getTopScorers() {
   if (isMock) return [...PLAYERS].sort((a, b) => b.goals - a.goals || b.intlGoals - a.intlGoals)
 
-  // Fetch topscorers AND topassists in parallel — both are WC 2026 tournament-
-  // specific endpoints so there is zero risk of mixing club season stats.
-  // Combining them gives broader coverage when only a few goals have been scored.
-  const [scorersRes, assistsRes] = await Promise.allSettled([
-    get(`${BASE}/players/topscorers?league=${WC_LEAGUE}&season=${WC_SEASON}`, { headers }),
-    get(`${BASE}/players/topassists?league=${WC_LEAGUE}&season=${WC_SEASON}`, { headers }),
-  ])
-
-  const seen     = new Set()
-  const combined = []
-
-  const addFrom = res => {
-    for (const r of (res?.value?.response || [])) {
-      const p = normalizePlayer(r)
-      if (p.id && !seen.has(p.id)) { seen.add(p.id); combined.push(p) }
-    }
-  }
-
-  addFrom(scorersRes)
-  addFrom(assistsRes)
-
-  // Sort by combined contribution (goals + assists), rating as tiebreaker
-  return combined.sort(
-    (a, b) => ((b.goals + b.assists) - (a.goals + a.assists)) ||
-              (parseFloat(b.rating) - parseFloat(a.rating))
+  // 1. Intentar topscorers del torneo
+  const topData = await get(
+    `${BASE}/players/topscorers?league=${WC_LEAGUE}&season=${WC_SEASON}`,
+    { headers }
   )
+  const topScorers = (topData.response || []).map(normalizePlayer)
+  if (topScorers.length > 0) return topScorers
+
+  // 2. Pre-torneo: cargar squads de los primeros 3 equipos clasificados
+  const teamsData = await get(
+    `${BASE}/teams?league=${WC_LEAGUE}&season=${WC_SEASON}`,
+    { headers }
+  )
+  const teamIds = (teamsData.response || []).slice(0, 3).map(r => r.team.id)
+  if (!teamIds.length) return []
+
+  const pages = await Promise.all(
+    teamIds.map(tid =>
+      get(`${BASE}/players?team=${tid}&season=${WC_SEASON}&page=1`, { headers })
+    )
+  )
+  const players = pages
+    .flatMap(p => (p.response || []).map(normalizePlayer))
+    .filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i) // dedup
+  return players
 }
 
 /**
