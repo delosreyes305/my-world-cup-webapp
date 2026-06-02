@@ -513,25 +513,28 @@ export async function getAllTeamPlayers(teamId) {
 
   if (teamId === null || teamId === undefined) return []
 
-  // Try WC 2026 season first, then fall back to recent seasons.
-  // Pre-tournament: squads aren't registered for season=2026 yet, so
-  // the previous season (Nations League / Qualifiers) has the data.
+  // ── Step 1: Official squad registration (all 26 players, no stats) ──────
+  // /players/squads returns every registered player regardless of whether
+  // they have played a single minute — this is the source of truth for
+  // squad completeness during the tournament.
+  let squadPlayers = []
+  try {
+    const squadData = await get(`${BASE}/players/squads?team=${teamId}`, { headers })
+    squadPlayers = squadData.response?.[0]?.players || []
+  } catch { /* fall through to stats-only path */ }
+
+  // ── Step 2: Collect stats for players who have appeared in matches ───────
+  // Try WC 2026 first, fall back to recent seasons for pre-tournament data.
+  const statsMap   = new Map()   // player id → raw API response item
   const seasonsToTry = [WC_SEASON, WC_SEASON - 1, WC_SEASON - 2]
 
   for (const season of seasonsToTry) {
     try {
-      // Fetch page 1 to get total page count
       const first = await get(
         `${BASE}/players?team=${teamId}&season=${season}&page=1`,
         { headers },
       )
       const total = first.paging?.total ?? 1
-      const firstPlayers = first.response || []
-
-      if (firstPlayers.length === 0 && season < seasonsToTry[seasonsToTry.length - 1] + 1) {
-        continue // empty — try older season
-      }
-
       const restPages = total > 1
         ? await Promise.all(
             Array.from({ length: total - 1 }, (_, i) =>
@@ -540,16 +543,40 @@ export async function getAllTeamPlayers(teamId) {
           )
         : []
 
-      const players = [first, ...restPages]
-        .flatMap(p => (p.response || []).map(r => normalizePlayer(r, teamId)))
-        .sort(byLastName)
+      ;[first, ...restPages]
+        .flatMap(p => p.response || [])
+        .forEach(r => { if (r.player?.id) statsMap.set(r.player.id, r) })
 
-      if (players.length > 0) {
-        squadCache.set(Number(teamId), players)
-        persistToStorage()   // persist so other browsers/sessions benefit too
-        return players
-      }
+      if (statsMap.size > 0) break   // got stats — no need to try older seasons
     } catch { /* try next season */ }
+  }
+
+  // ── Step 3: Merge — squad list is the base, stats enrich where available ─
+  // Derive nationality from any stats entry (all players share the same nation)
+  const sampleNation = statsMap.size > 0
+    ? [...statsMap.values()][0].player.nationality || ''
+    : ''
+
+  let players
+  if (squadPlayers.length > 0) {
+    players = squadPlayers.map(sp => {
+      const statsRaw = statsMap.get(sp.id)
+      // Player has appeared in a match → use full stats normalizer
+      if (statsRaw) return normalizePlayer(statsRaw, teamId)
+      // Player is registered but hasn't played → use basic squad data
+      return normalizeSquadPlayer(sp, teamId, sampleNation)
+    })
+  } else {
+    // Squads endpoint failed — fall back to stats-only (old behaviour)
+    players = [...statsMap.values()].map(r => normalizePlayer(r, teamId))
+  }
+
+  players = players.sort(byLastName)
+
+  if (players.length > 0) {
+    squadCache.set(Number(teamId), players)
+    persistToStorage()
+    return players
   }
 
   return []
@@ -850,6 +877,35 @@ function apiPos(position) {
     case 'defender':   return 'DF'
     case 'midfielder': return 'MF'
     default:           return 'FW'  // Attacker / Forward / Striker
+  }
+}
+
+/**
+ * Normalizes a player from the /players/squads endpoint.
+ * Returns basic shape (no stats) — merged later with stats data if available.
+ * Squads endpoint positions: "G" | "D" | "M" | "A"
+ */
+function normalizeSquadPlayer(p, teamId, nation = '') {
+  const posMap = { G: 'GK', D: 'DF', M: 'MF', A: 'FW' }
+  return {
+    id:        p.id,
+    name:      p.name,
+    photo:     p.photo || '',
+    emoji:     '⭐',
+    flag:      '',
+    pos:       posMap[p.pos] || 'FW',
+    club:      '',
+    age:       p.age,
+    nation,
+    goals:     0,
+    assists:   0,
+    rating:    '0.0',
+    val:       '—',
+    height:    null,
+    weight:    null,
+    caps:      0,
+    intlGoals: 0,
+    teamId:    teamId || null,
   }
 }
 
