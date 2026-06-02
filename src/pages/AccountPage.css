@@ -217,10 +217,26 @@
   line-height: 1;
 }
 
-@media (max-width: 400px) {
-  .account-tab { padding: 9px 10px; font-size: 12px; gap: 5px; }
+@media (max-width: 540px) {
+  .account-tabs {
+    gap: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .account-tabs::-webkit-scrollbar { display: none; }
+  .account-tab {
+    padding: 9px 12px;
+    font-size: 12px;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .account-tab { padding: 8px 10px; }
   .account-tab span { display: none; }
-  .account-tab i { font-size: 15px; }
+  .account-tab i { font-size: 16px; }
 }
 
 /* ─── Edit profile forms ─────────────────────────────────────────── */
