@@ -452,6 +452,14 @@ export default function Home() {
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
 
           {/* ── Skeleton (5 rows) ── */}
+          {/* Empty state — shown when the tournament has just started and no stats yet */}
+          {!scorersLoad && topPlayers.length === 0 && (
+            <div style={{ padding: '28px 16px', textAlign: 'center', color: 'var(--text3)', fontSize: 13 }}>
+              <i className="fa-solid fa-futbol" style={{ fontSize: 24, marginBottom: 10, display: 'block', opacity: 0.4 }} />
+              {lang === 'es' ? 'Las estadísticas se actualizan con cada partido.' : 'Stats update as matches are played.'}
+            </div>
+          )}
+
           {scorersLoad && topPlayers.length === 0 && (
             [1,2,3,4,5].map(i => (
               <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px',
