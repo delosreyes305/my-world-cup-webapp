@@ -298,7 +298,7 @@ export default function Home() {
   const topPlayers = useMemo(() => {
     if (!scorers) return []
     return [...scorers]
-      .sort((a, b) => (parseFloat(b.rating) - parseFloat(a.rating)) || (b.goals - a.goals))
+      .sort((a, b) => (b.goals - a.goals) || (parseFloat(b.rating) - parseFloat(a.rating)))
       .slice(0, 5)
   }, [scorers])
 

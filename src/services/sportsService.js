@@ -435,31 +435,48 @@ export async function getTeamFixtures(teamId) {
 export async function getTopScorers() {
   if (isMock) return [...PLAYERS].sort((a, b) => b.goals - a.goals || b.intlGoals - a.intlGoals)
 
-  // 1. Intentar topscorers del torneo
-  const topData = await get(
-    `${BASE}/players/topscorers?league=${WC_LEAGUE}&season=${WC_SEASON}`,
-    { headers }
-  )
-  const topScorers = (topData.response || []).map(normalizePlayer)
-  if (topScorers.length > 0) return topScorers
-
-  // 2. Pre-torneo: cargar squads de los primeros 3 equipos clasificados
-  const teamsData = await get(
-    `${BASE}/teams?league=${WC_LEAGUE}&season=${WC_SEASON}`,
-    { headers }
-  )
-  const teamIds = (teamsData.response || []).slice(0, 3).map(r => r.team.id)
-  if (!teamIds.length) return []
-
-  const pages = await Promise.all(
-    teamIds.map(tid =>
-      get(`${BASE}/players?team=${tid}&season=${WC_SEASON}&page=1`, { headers })
+  // 1. Official tournament top scorers — sorted by goals by the API
+  try {
+    const topData = await get(
+      `${BASE}/players/topscorers?league=${WC_LEAGUE}&season=${WC_SEASON}`,
+      { headers }
     )
-  )
-  const players = pages
-    .flatMap(p => (p.response || []).map(normalizePlayer))
-    .filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i) // dedup
-  return players
+    const topScorers = (topData.response || []).map(r => normalizePlayer(r))
+    if (topScorers.length > 0) return topScorers
+  } catch { /* fall through */ }
+
+  // 2. Fallback — use squadCache if already populated by the preload.
+  // This gives a proper cross-country mix instead of loading 3 arbitrary teams.
+  if (squadCache.size > 0) {
+    const seen = new Set()
+    const all  = []
+    for (const players of squadCache.values()) {
+      for (const p of players) {
+        if (!seen.has(p.id)) { seen.add(p.id); all.push(p) }
+      }
+    }
+    return all.sort((a, b) => (b.goals - a.goals) || (parseFloat(b.rating) - parseFloat(a.rating)))
+  }
+
+  // 3. Last resort — load top 5 teams in parallel and mix their players
+  try {
+    const teamsData = await get(
+      `${BASE}/teams?league=${WC_LEAGUE}&season=${WC_SEASON}`,
+      { headers }
+    )
+    const teamIds = (teamsData.response || []).slice(0, 5).map(r => r.team.id)
+    if (!teamIds.length) return []
+
+    const pages = await Promise.all(
+      teamIds.map(tid =>
+        get(`${BASE}/players?team=${tid}&season=${WC_SEASON}&page=1`, { headers })
+      )
+    )
+    return pages
+      .flatMap(p => (p.response || []).map(r => normalizePlayer(r)))
+      .filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i)
+      .sort((a, b) => (b.goals - a.goals) || (parseFloat(b.rating) - parseFloat(a.rating)))
+  } catch { return [] }
 }
 
 /**

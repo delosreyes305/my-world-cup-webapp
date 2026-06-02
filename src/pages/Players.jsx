@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useApp } from '../context/AppContext'
 import { useApi } from '../hooks/useApi'
@@ -39,10 +39,11 @@ export default function Players() {
   ]
   const { toggleFav, isFav } = useApp()
   const navigate             = useNavigate()
+  const { state: navState }  = useLocation()
 
   // ── Filters ──────────────────────────────────────────
   const [pos,     setPos    ] = useState('All')
-  const [country, setCountry] = useState('All')
+  const [country, setCountry] = useState(() => navState?.country || 'All')
   const [sortBy,  setSortBy ] = useState('alpha')
   const [search,  setSearch ] = useState('')
 

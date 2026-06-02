@@ -414,7 +414,7 @@ export default function TeamDetail() {
           </h2>
           {squad && squad.length > 4 && (
             <button className="see-all"
-              onClick={() => navigate('/players')}>
+              onClick={() => navigate('/players', { state: { country: team.name } })}>
               {lang === 'es'
                 ? `Ver plantel (${squad.length})`
                 : `Full squad (${squad.length})`} →
