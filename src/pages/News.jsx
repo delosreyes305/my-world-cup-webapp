@@ -62,8 +62,8 @@ export default function News() {
               className="news-article-card card card-clickable"
               role="listitem"
               tabIndex={0}
-              onClick={() => user ? setReading(article) : setAuthRequiredOpen(true)}
-              onKeyDown={e => e.key === 'Enter' && (user ? setReading(article) : setAuthRequiredOpen(true))}
+              onClick={() => user ? setReading(article) : setAuthRequiredOpen('news')}
+              onKeyDown={e => e.key === 'Enter' && (user ? setReading(article) : setAuthRequiredOpen('news'))}
               aria-label={article.title}
             >
               {article.image ? (

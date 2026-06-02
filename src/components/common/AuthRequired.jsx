@@ -4,7 +4,7 @@ import { useLang } from '../../context/LangContext'
 
 export default function AuthRequired() {
   const { authRequiredOpen, setAuthRequiredOpen, openAuthModal } = useAuth()
-  const { t } = useLang()
+  const { t, lang } = useLang()
 
   // Cerrar con Escape
   useEffect(() => {
@@ -43,20 +43,37 @@ export default function AuthRequired() {
         className="auth-required-card"
         onClick={e => e.stopPropagation()}
       >
-        {/* Ícono corazón + candado */}
+        {/* Icon changes based on context */}
         <div className="auth-required-icon">
-          <i className="fa-regular fa-heart" />
+          <i className={authRequiredOpen === 'news' ? 'fa-regular fa-newspaper' : 'fa-regular fa-heart'} />
           <span className="auth-required-lock">
             <i className="fa-solid fa-lock" />
           </span>
         </div>
 
-        <h2 className="auth-required-title">
-          {t('favorites', 'login_required')}
-        </h2>
-        <p className="auth-required-sub">
-          {t('favorites', 'login_required_sub')}
-        </p>
+        {authRequiredOpen === 'news' ? (
+          <>
+            <h2 className="auth-required-title">
+              {lang === 'es'
+                ? 'Crea una cuenta para leer noticias'
+                : 'Create an account to read news'}
+            </h2>
+            <p className="auth-required-sub">
+              {lang === 'es'
+                ? 'Regístrate gratis para leer artículos completos y mantenerte al día con el Mundial.'
+                : 'Sign up for free to read full articles and stay up to date with the World Cup.'}
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="auth-required-title">
+              {t('favorites', 'login_required')}
+            </h2>
+            <p className="auth-required-sub">
+              {t('favorites', 'login_required_sub')}
+            </p>
+          </>
+        )}
 
         <div className="auth-required-actions">
           <button className="btn btn-gold" onClick={openSignIn}>
