@@ -10,7 +10,7 @@ VALID_TYPES = {'team', 'player', 'match', 'article'}
 
 
 # ── GET /api/favorites ───────────────────────────────────────────────
-@favorites_bp.route('', methods=['GET'])
+@favorites_bp.route('', methods=['GET'], strict_slashes=False)
 @jwt_required()
 def get_favorites():
     user_id = int(get_jwt_identity())
@@ -26,7 +26,7 @@ def get_favorites():
 
 
 # ── POST /api/favorites ──────────────────────────────────────────────
-@favorites_bp.route('', methods=['POST'])
+@favorites_bp.route('', methods=['POST'], strict_slashes=False)
 @jwt_required()
 def add_favorite():
     user_id = int(get_jwt_identity())
