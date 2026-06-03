@@ -83,7 +83,7 @@ export default function MatchDetail() {
   const { state }    = useLocation()
   const { t, lang }  = useLang()
   const { toggleFav, isFav } = useApp()
-  const { user, openAuthModal } = useAuth()
+  const { user, authLoading, openAuthModal } = useAuth()
 
   // Fast path: match passed via navigation state; fallback to mock data
   const match = state?.match ?? MATCHES.find(m => m.id === Number(id))
@@ -116,8 +116,8 @@ export default function MatchDetail() {
   const { data: events, loading: eventsLoad } =
     useApi(getMatchEvents, Number(id), { skip, ttl: 60_000 })
 
-  // ── Auth gate ─────────────────────────────────────────
-  if (!user) return (
+  // ── Auth gate — wait for token validation before showing sign-in ──
+  if (!user && !authLoading) return (
     <div className="page-content page-enter" style={{ textAlign: 'center', padding: '80px 24px' }}>
       <div style={{ position: 'relative', display: 'inline-flex', justifyContent: 'center', marginBottom: 20 }}>
         <i className="fa-regular fa-futbol" style={{ fontSize: 52, color: 'var(--gold)', opacity: 0.85 }} />
@@ -295,7 +295,7 @@ export default function MatchDetail() {
         )}
 
         {/* Actions */}
-        <div className="flex gap-8 flex-wrap">
+        <div className="flex gap-8 flex-wrap" style={{ justifyContent: 'center' }}>
           <button
             className={`btn btn-sm ${isFav('matches', match.id) ? 'btn-gold' : 'btn-outline'}`}
             onClick={() => toggleFav('matches', { ...match, name: `${team1} vs ${team2}` })}

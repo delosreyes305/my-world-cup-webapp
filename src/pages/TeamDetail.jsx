@@ -68,7 +68,7 @@ export default function TeamDetail() {
   const { state }    = useLocation()
   const { t, lang }  = useLang()
   const { toggleFav, isFav } = useApp()
-  const { user, openAuthModal } = useAuth()
+  const { user, authLoading, openAuthModal } = useAuth()
 
   // Resolve team: navigation state (fast path) or fall back to teams list (direct URL)
   const { data: teams } = useApi(getTeams, { ttl: 3_600_000 })
@@ -102,8 +102,8 @@ export default function TeamDetail() {
       .slice(0, 4)
   }, [squad])
 
-  // ── Auth gate ────────────────────────────────────────────
-  if (!user) return (
+  // ── Auth gate — wait for token validation before showing sign-in ──
+  if (!user && !authLoading) return (
     <div className="page-content page-enter" style={{ textAlign: 'center', padding: '80px 24px' }}>
       <div style={{ position: 'relative', display: 'inline-flex', justifyContent: 'center', marginBottom: 20 }}>
         <i className="fa-regular fa-shield-halved" style={{ fontSize: 52, color: 'var(--gold)', opacity: 0.85 }} />
@@ -200,11 +200,6 @@ export default function TeamDetail() {
                 </span>
               )}
             </div>
-            {team.country && (
-              <div className="caption" style={{ marginBottom: 14, color: 'var(--text3)' }}>
-                {team.country}
-              </div>
-            )}
             <div className="flex gap-8 flex-wrap">
               <button
                 className={`btn btn-sm ${isFav('teams', team.id) ? 'btn-gold' : 'btn-outline'}`}
