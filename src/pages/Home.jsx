@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useApi, useApiPolling } from '../hooks/useApi'
-import { getLiveMatches, getStandings, getTopScorers, getTeams, getAllFixtures, TEAM_ISO } from '../services/sportsService'
+import { getLiveMatches, getStandings, getTopScorers, getTopAssists, getTopYellowCards, getTopRedCards, getTeams, getAllFixtures, TEAM_ISO } from '../services/sportsService'
 import { getNews } from '../services/newsService'
 import { TEAMS, GROUPS } from '../data/mockData'
 import MatchCard from '../components/common/MatchCard'
@@ -12,14 +12,14 @@ import ApiStatus from '../components/common/ApiStatus'
 import NewsReader from '../components/common/NewsReader'
 import '../components/common/MatchCard.css'
 import './Home.css'
-
+ 
 // ── Fallback: WC 2026 inaugural (used when no API fixtures available) ───
 const INAUGURAL_DATE = new Date('2026-06-11T22:00:00Z')
 const INAUGURAL = {
   team1: 'Mexico', team2: 'Ecuador',
   group: '', venue: 'Estadio Azteca, Mexico City',
 }
-
+ 
 // ── Countdown hook ────────────────────────────────────
 function useCountdown(target) {
   const calc = () => Math.max(0, (target?.getTime?.() ?? 0) - Date.now())
@@ -37,7 +37,7 @@ function useCountdown(target) {
   const seconds = Math.floor((ms % 60000)    / 1000)
   return { days, hours, minutes, seconds, expired: ms <= 0 }
 }
-
+ 
 // ── Normalise phase / round label ────────────────────
 function formatPhase(group, lang) {
   if (!group) return lang === 'es' ? 'Próximo Partido' : 'Next Match'
@@ -66,7 +66,7 @@ function formatPhase(group, lang) {
   if (/final/i.test(g))        return 'Final'
   return g
 }
-
+ 
 // ── Flag image from flagcdn.com ───────────────────────
 function FlagImg({ name, size = 44 }) {
   const iso = TEAM_ISO[name]
@@ -85,23 +85,24 @@ function FlagImg({ name, size = 44 }) {
     />
   )
 }
-
+ 
 // ── Dynamic countdown to next match ──────────────────
 function DynamicCountdown({ upcoming, lang }) {
   const [idx, setIdx] = useState(0)
-
+ 
   // Reset index when the list changes (fresh fixtures loaded)
-  useEffect(() => { setIdx(0) }, [upcoming])
-
+const firstMatchId = upcoming[0]?.id ?? null
+  useEffect(() => { setIdx(0) }, [firstMatchId])
+ 
   const match = upcoming[idx] ?? null
   const targetDate = useMemo(
     () => match ? new Date(match.date) : INAUGURAL_DATE,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [match?.date]
   )
-
+ 
   const { days, hours, minutes, seconds, expired } = useCountdown(targetDate)
-
+ 
   // When countdown hits 0, advance to the next scheduled match
   useEffect(() => {
     if (!expired) return
@@ -110,10 +111,10 @@ function DynamicCountdown({ upcoming, lang }) {
       return () => clearTimeout(t)
     }
   }, [expired, idx, upcoming.length])
-
+ 
   // Nothing left to show
   if (expired && (upcoming.length === 0 || idx >= upcoming.length - 1)) return null
-
+ 
   const team1  = match?.team1  ?? INAUGURAL.team1
   const team2  = match?.team2  ?? INAUGURAL.team2
   const phase  = match
@@ -122,11 +123,11 @@ function DynamicCountdown({ upcoming, lang }) {
   const venue  = match
     ? [match.venue, match.stadium].filter(Boolean).join(' · ')
     : INAUGURAL.venue
-
+ 
   const units = lang === 'es'
     ? [{ v: days, l: 'Días' }, { v: hours, l: 'Horas' }, { v: minutes, l: 'Min' }, { v: seconds, l: 'Seg' }]
     : [{ v: days, l: 'Days' }, { v: hours, l: 'Hours' }, { v: minutes, l: 'Min' }, { v: seconds, l: 'Sec' }]
-
+ 
   return (
     <div className="card" style={{
       background: 'linear-gradient(135deg, rgba(240,180,41,.08), rgba(240,180,41,.02))',
@@ -140,7 +141,7 @@ function DynamicCountdown({ upcoming, lang }) {
       }}>
         {phase} · FIFA World Cup 2026
       </div>
-
+ 
       {/* Teams with image flags */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
@@ -153,7 +154,7 @@ function DynamicCountdown({ upcoming, lang }) {
           <span style={{ fontWeight: 700, fontSize: 13 }}>{team2}</span>
         </div>
       </div>
-
+ 
       {/* Countdown units */}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 12 }}>
         {units.map(({ v, l }) => (
@@ -171,14 +172,14 @@ function DynamicCountdown({ upcoming, lang }) {
           </div>
         ))}
       </div>
-
+ 
       {venue && (
         <div className="caption" style={{ color: 'var(--text3)', fontSize: 11 }}>{venue}</div>
       )}
     </div>
   )
 }
-
+ 
 // ── Hero ─────────────────────────────────────────────
 function Hero() {
   const { t } = useLang()
@@ -225,7 +226,7 @@ function Hero() {
     </div>
   )
 }
-
+ 
 // ── Group standings table ─────────────────────────────
 function GroupTable({ group, groups, lang }) {
   const teams = (groups || GROUPS)[group]
@@ -270,7 +271,7 @@ function GroupTable({ group, groups, lang }) {
     </div>
   )
 }
-
+ 
 // ── Main component ────────────────────────────────────
 export default function Home() {
   const { t, lang }          = useLang()
@@ -279,14 +280,19 @@ export default function Home() {
   const navigate = useNavigate()
   const [activeGroup, setActiveGroup] = React.useState('A')
   const [reading, setReading]         = useState(null)
-
+ 
   const { data: liveMatches, loading: liveLoad } = useApiPolling(getLiveMatches, 30_000)
   const { data: standings  }                      = useApi(getStandings,   { ttl: 3_600_000 })
   const { data: allTeams   }                      = useApi(getTeams,       { ttl: 3_600_000 })
   const { data: headlines  }                      = useApi(getNews, 'all', lang, 10, { ttl: 120_000 })
-  const { data: scorers, loading: scorersLoad }   = useApi(getTopScorers,  { ttl: 3_600_000 })
-  const { data: allFixtures }                     = useApi(getAllFixtures,  { ttl: 1_800_000 })
-
+  const [activeTab, setActiveTab] = useState('goals')
+ 
+  const { data: scorers,     loading: loadGoals   } = useApi(getTopScorers,     null, { ttl: 3_600_000 })
+  const { data: assisters,   loading: loadAssists } = useApi(getTopAssists,     null, { ttl: 3_600_000 })
+  const { data: yellows,     loading: loadYellows } = useApi(getTopYellowCards, null, { ttl: 3_600_000 })
+  const { data: reds,        loading: loadReds    } = useApi(getTopRedCards,    null, { ttl: 3_600_000 })
+  const { data: allFixtures, loading: fixturesLoad } = useApi(getAllFixtures,  { ttl: 1_800_000 })
+ 
   // Next upcoming matches — sorted by date, only future or very-recent kickoffs
   const upcomingMatches = useMemo(() => {
     const cutoff = Date.now() - 120 * 60 * 1000 // still show within 2h after kickoff
@@ -294,34 +300,43 @@ export default function Home() {
       .filter(m => m.status === 'upcoming' && m.date && new Date(m.date).getTime() > cutoff)
       .sort((a, b) => new Date(a.date) - new Date(b.date))
   }, [allFixtures])
-
+ 
+  const TAB_CONFIG = {
+    goals:   { data: scorers,   loading: loadGoals,   statKey: 'goals',       color: 'var(--gold)',     label: lang === 'es' ? 'Goles'      : 'Goals',    labelShort: lang === 'es' ? 'G'   : 'G'   },
+    assists: { data: assisters, loading: loadAssists, statKey: 'assists',     color: 'var(--electric)', label: lang === 'es' ? 'Asistencias': 'Assists',   labelShort: lang === 'es' ? 'A'   : 'A'   },
+    yellow:  { data: yellows,   loading: loadYellows, statKey: 'yellowCards', color: '#f0b429',         label: lang === 'es' ? 'Amarillas'  : 'Yellow',    labelShort: lang === 'es' ? 'YC'  : 'YC'  },
+    red:     { data: reds,      loading: loadReds,    statKey: 'redCards',    color: 'var(--red)',      label: lang === 'es' ? 'Rojas'      : 'Red',       labelShort: lang === 'es' ? 'RC'  : 'RC'  },
+  }
+ 
+  const activeConfig = TAB_CONFIG[activeTab]
+ 
   const topPlayers = useMemo(() => {
-    if (!scorers) return []
-    return [...scorers]
-      .sort((a, b) => (parseFloat(b.rating) - parseFloat(a.rating)) || (b.goals - a.goals))
+    const list = activeConfig?.data || []
+    return [...list]
+      .sort((a, b) => (b[activeConfig?.statKey] || 0) - (a[activeConfig?.statKey] || 0))
       .slice(0, 5)
-  }, [scorers])
-
+  }, [activeConfig])
+ 
   const rankedTeams = useMemo(() =>
     [...(allTeams || TEAMS)]
       .filter(t => t.rank)
       .sort((a, b) => a.rank - b.rank)
       .slice(0, 5)
   , [allTeams])
-
+ 
   const displayMatches = liveMatches?.length ? liveMatches.slice(0, 4) : []
-
+ 
   return (
     <div className="page-content page-enter">
       <Hero />
-
+ 
       {/* ── Live & Upcoming matches ── */}
       <section className="mb-24">
         <div className="section-header">
           <h2 className="section-title"> <span>{t('home','live_today')}</span></h2>
           <button className="see-all" onClick={() => navigate('/matches')}>{t('common','see_all')} →</button>
         </div>
-
+ 
         {liveLoad ? (
           <div className="grid-2">
             {[1,2,3,4].map(i => (
@@ -333,9 +348,11 @@ export default function Home() {
             {displayMatches.map(m => <MatchCard key={m.id} match={m} />)}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Dynamic countdown to next match */}
-            <DynamicCountdown upcoming={upcomingMatches} lang={lang} />
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {fixturesLoad
+        ? <div className="skeleton" style={{ height: 220, borderRadius: 'var(--radius)' }} />
+        : <DynamicCountdown upcoming={upcomingMatches} lang={lang} />
+      }
             <div className="card" style={{ textAlign: 'center', padding: '24px', color: 'var(--text3)' }}>
               {t('home','no_live')}{' '}
               <button className="see-all" onClick={() => navigate('/matches')}>{t('common','see_all')} →</button>
@@ -343,7 +360,7 @@ export default function Home() {
           </div>
         )}
       </section>
-
+ 
       {/* ── Groups + Ranking ── */}
       <section className="grid-2 mb-24">
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -365,7 +382,7 @@ export default function Home() {
             <GroupTable group={activeGroup} groups={standings} lang={lang} />
           </div>
         </div>
-
+ 
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <div className="section-header mb-16">
             <h2 className="section-title"><span>{t('home','ranking')}</span></h2>
@@ -393,7 +410,7 @@ export default function Home() {
                         : 0,
                     transition: 'background 0.2s, transform 0.2s cubic-bezier(0.4,0,0.2,1)',
                   }}>
-
+ 
                   {/* ── Rank badge ── */}
                   <div style={{
                     width: 28, height: 28, borderRadius: 6, flexShrink: 0,
@@ -404,7 +421,7 @@ export default function Home() {
                   }}>
                     {team.rank}
                   </div>
-
+ 
                   {/* ── Flag ── */}
                   <div style={{ width: 38, height: 26, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {flagSrc ? (
@@ -421,7 +438,7 @@ export default function Home() {
                       <span style={{ fontSize: 20 }}>{team.flag}</span>
                     )}
                   </div>
-
+ 
                   {/* ── Name + confederation ── */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="fw-600" style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text)' }}>
@@ -429,7 +446,7 @@ export default function Home() {
                     </div>
                     <div className="caption" style={{ fontSize: 10 }}>{team.confederation}</div>
                   </div>
-
+ 
                   {/* ── WC titles ── */}
                   {team.titles > 0 && (
                     <div style={{ fontSize: 11, color: 'var(--gold)', fontWeight: 600, flexShrink: 0 }}>
@@ -442,36 +459,59 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* ── Top Scorers ── */}
+ 
+      {/* ── Top Players — tabs: Goals / Assists / Yellow / Red ── */}
       <section className="mb-24">
         <div className="section-header">
           <h2 className="section-title"><span>{t('home','top_players')}</span></h2>
           <button className="see-all" onClick={() => navigate('/players')}>{t('common','see_all')} →</button>
         </div>
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-
-          {/* ── Skeleton (5 rows) ── */}
-          {scorersLoad && topPlayers.length === 0 && (
+ 
+        {/* ── Tabs ── */}
+        <div className="tabs" style={{ marginBottom: 0, borderRadius: 'var(--radius) var(--radius) 0 0' }}>
+          {Object.entries(TAB_CONFIG).map(([key, cfg]) => (
+            <button
+              key={key}
+              className={`tab${activeTab === key ? ' active' : ''}`}
+              onClick={() => setActiveTab(key)}
+              style={{ color: activeTab === key ? cfg.color : undefined }}
+            >
+              {cfg.label}
+            </button>
+          ))}
+        </div>
+ 
+        <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: '0 0 var(--radius) var(--radius)', borderTop: 'none' }}>
+ 
+          {/* ── Skeleton ── */}
+          {activeConfig.loading && topPlayers.length === 0 && (
             [1,2,3,4,5].map(i => (
               <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px',
                 borderBottom: i < 5 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
                 <div className="skeleton" style={{ width:28, height:28, borderRadius:6, flexShrink:0 }} />
-                <div className="skeleton" style={{ width:44, height:44, borderRadius:8, flexShrink:0 }} />
+                <div className="skeleton" style={{ width:44, height:44, borderRadius:'50%', flexShrink:0 }} />
                 <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6 }}>
                   <div className="skeleton" style={{ width:'55%', height:12, borderRadius:4 }} />
                   <div className="skeleton" style={{ width:'35%', height:10, borderRadius:4 }} />
                   <div className="skeleton" style={{ width:'80%', height:3, borderRadius:2 }} />
                 </div>
-                <div className="skeleton" style={{ width:64, height:30, borderRadius:6 }} />
+                <div className="skeleton" style={{ width:40, height:30, borderRadius:6 }} />
               </div>
             ))
           )}
-
+ 
           {/* ── Player rows ── */}
           {topPlayers.map((p, i) => {
-            const maxG = Math.max(topPlayers[0]?.goals || 0, 1)
-            const pct  = Math.round(((p.goals || 0) / maxG) * 100)
+            const statVal = p[activeConfig.statKey] ?? 0
+            const maxVal  = Math.max(topPlayers[0]?.[activeConfig.statKey] || 0, 1)
+            const pct     = Math.round((statVal / maxVal) * 100)
+            const isFirst = i === 0
+            const isLast  = i === topPlayers.length - 1
+ 
+            // Flag from TEAM_ISO using nation name
+            const iso     = TEAM_ISO[p.nation]
+            const flagSrc = iso ? `https://flagcdn.com/w20/${iso}.png` : null
+ 
             return (
               <button key={p.id}
                 className="card-clickable"
@@ -480,78 +520,85 @@ export default function Home() {
                 style={{
                   width:'100%', textAlign:'left',
                   display:'flex', alignItems:'center', gap:12, padding:'12px 16px',
-                  background: i === 0 ? 'rgba(240,180,41,0.06)' : 'transparent',
-                  borderLeft: i === 0 ? '3px solid var(--gold)' : '3px solid transparent',
-                  borderBottom: i < topPlayers.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                  borderRadius: i === 0
-                    ? 'var(--radius) var(--radius) 0 0'
-                    : i === topPlayers.length - 1
-                      ? '0 0 var(--radius) var(--radius)'
-                      : 0,
+                  background: isFirst ? `${activeConfig.color}0f` : 'transparent',
+                  borderLeft: `3px solid ${isFirst ? activeConfig.color : 'transparent'}`,
+                  borderBottom: !isLast ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                  borderRadius: isFirst ? '0' : isLast ? '0 0 var(--radius) var(--radius)' : 0,
                   transition:'background 0.2s, transform 0.2s cubic-bezier(0.4,0,0.2,1)',
                 }}>
-
-                {/* ── Rank badge ── */}
+ 
+                {/* Rank */}
                 <div style={{
                   width:28, height:28, borderRadius:6, flexShrink:0,
                   display:'flex', alignItems:'center', justifyContent:'center',
                   fontFamily:'var(--font-display)', fontSize:13, fontWeight:700,
-                  background: i===0 ? 'var(--gold-grad)' : 'rgba(255,255,255,0.06)',
-                  color: i===0 ? 'var(--navy)' : 'var(--text3)',
+                  background: isFirst ? activeConfig.color : 'rgba(255,255,255,0.06)',
+                  color: isFirst ? 'var(--navy)' : 'var(--text3)',
                 }}>{i+1}</div>
-
-                {/* ── Photo ── */}
+ 
+                {/* Photo */}
                 <div style={{
-                  width:44, height:44, borderRadius:8, flexShrink:0,
-                  background:'rgba(240,180,41,0.08)',
-                  border:`1.5px solid ${i===0 ? 'rgba(240,180,41,0.35)' : 'rgba(255,255,255,0.08)'}`,
+                  width:40, height:40, borderRadius:'50%', flexShrink:0,
+                  background:'rgba(255,255,255,0.06)',
+                  border:`1.5px solid ${isFirst ? activeConfig.color + '66' : 'rgba(255,255,255,0.08)'}`,
                   display:'flex', alignItems:'center', justifyContent:'center',
-                  overflow:'hidden', fontSize:22,
+                  overflow:'hidden', fontSize:18,
                 }}>
                   {p.photo
                     ? <img src={p.photo} alt={p.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{e.target.style.display='none'}} />
-                    : (p.emoji || '★')}
+                    : '⭐'}
                 </div>
-
-                {/* ── Name + position + bar ── */}
+ 
+                {/* Name + nation + bar */}
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:2 }}>
-                    <span className="fw-600" style={{ fontSize:13, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', color:'var(--text)' }}>{p.name}</span>
-                    {p.flag && <span style={{ opacity:0.45, fontSize:11, flexShrink:0 }}>{p.flag}</span>}
+                    <span className="fw-600" style={{ fontSize:13, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', color:'var(--text)' }}>
+                      {p.name}
+                    </span>
                   </div>
-                  <div className="caption" style={{ fontSize:10, marginBottom:6 }}>
-                    {[p.pos, p.club || p.nation].filter(Boolean).join(' · ')}
+                  <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:5 }}>
+                    {flagSrc && (
+                      <img src={flagSrc} alt={p.nation}
+                        style={{ width:14, height:10, objectFit:'cover', borderRadius:1, border:'1px solid rgba(255,255,255,0.1)', flexShrink:0 }}
+                        onError={e => { e.target.style.display='none' }}
+                      />
+                    )}
+                    <span className="caption" style={{ fontSize:10, color:'var(--text3)' }}>
+                      {[p.pos, p.nation].filter(Boolean).join(' · ')}
+                    </span>
                   </div>
+                  {/* Progress bar */}
                   <div style={{ height:3, background:'rgba(255,255,255,0.07)', borderRadius:2 }}>
                     <div style={{
                       width:`${pct||3}%`, height:'100%', borderRadius:2,
-                      background: i===0 ? 'var(--gold-grad)' : 'rgba(240,180,41,0.35)',
-                      transition:'width 0.9s ease',
+                      background: isFirst ? activeConfig.color : `${activeConfig.color}55`,
+                      transition:'width 0.7s ease',
                     }} />
                   </div>
                 </div>
-
-                {/* ── Stats ── */}
-                <div style={{ display:'flex', gap:12, flexShrink:0, textAlign:'center' }}>
-                  <div>
-                    <div style={{ fontFamily:'var(--font-display)', fontSize:18, color:'var(--gold)', lineHeight:1 }}>{p.goals??0}</div>
-                    <div className="caption" style={{ fontSize:9 }}>{t('common','goals_abbr')}</div>
+ 
+                {/* Stat value */}
+                <div style={{ textAlign:'center', flexShrink:0, minWidth:36 }}>
+                  <div style={{ fontFamily:'var(--font-display)', fontSize:22, color: activeConfig.color, lineHeight:1 }}>
+                    {statVal}
                   </div>
-                  <div>
-                    <div style={{ fontFamily:'var(--font-display)', fontSize:18, color:'var(--text2)', lineHeight:1 }}>{p.assists??0}</div>
-                    <div className="caption" style={{ fontSize:9 }}>{t('common','assists_abbr')}</div>
-                  </div>
-                  <div>
-                    <div style={{ fontFamily:'var(--font-display)', fontSize:18, color:'var(--electric)', lineHeight:1 }}>{p.rating}</div>
-                    <div className="caption" style={{ fontSize:9 }}>{t('common','rating_abbr')}</div>
+                  <div className="caption" style={{ fontSize:9, color:'var(--text3)', textTransform:'uppercase', letterSpacing:0.5 }}>
+                    {activeConfig.labelShort}
                   </div>
                 </div>
               </button>
             )
           })}
+ 
+          {/* Empty state */}
+          {!activeConfig.loading && topPlayers.length === 0 && (
+            <div style={{ padding:'32px 20px', textAlign:'center', color:'var(--text3)', fontSize:13 }}>
+              {lang === 'es' ? 'Sin datos disponibles aún' : 'No data available yet'}
+            </div>
+          )}
         </div>
       </section>
-
+ 
       {/* ── News ── */}
       <section>
         <div className="section-header">
@@ -620,7 +667,7 @@ export default function Home() {
           ))}
         </div>
       </section>
-
+ 
       {/* In-app article reader */}
       <NewsReader article={reading} onClose={() => setReading(null)} />
     </div>

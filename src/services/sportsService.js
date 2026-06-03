@@ -432,19 +432,11 @@ export async function getTeamFixtures(teamId) {
  * - Pre-torneo (endpoint vacío): carga jugadores de los primeros 3 equipos del
  *   torneo en paralelo para mostrar datos reales de la API aunque no haya goles.
  */
-export async function getTopScorers() {
-  if (isMock) return [...PLAYERS].sort((a, b) => b.goals - a.goals || b.intlGoals - a.intlGoals)
-
-  // 1. Intentar topscorers del torneo
-  const topData = await get(
-    `${BASE}/players/topscorers?league=${WC_LEAGUE}&season=${WC_SEASON}`,
-    { headers }
-  )
-  const topScorers = (topData.response || []).map(normalizePlayer)
-  if (topScorers.length > 0) return topScorers
-
-  // 2. Fallback — load players from a curated set of popular teams so the
-  // Top Players card always shows a representative cross-country mix.
+/**
+ * Fallback compartido — carga jugadores de los 7 equipos más conocidos
+ * cuando el endpoint de ranking devuelve vacío (pre-torneo o sin datos).
+ */
+async function _fetchPriorityPlayers() {
   const teamsData = await get(
     `${BASE}/teams?league=${WC_LEAGUE}&season=${WC_SEASON}`,
     { headers }
@@ -452,13 +444,11 @@ export async function getTopScorers() {
   const allTeamEntries = (teamsData.response || []).map(r => ({ id: r.team.id, name: r.team.name }))
   if (!allTeamEntries.length) return []
 
-  // Always include these teams — they have the most globally recognised players
   const PRIORITY = ['Argentina', 'Brazil', 'France', 'Portugal', 'England', 'Spain', 'Germany']
   const priorityIds = PRIORITY
     .map(name => allTeamEntries.find(t => t.name === name)?.id)
     .filter(Boolean)
 
-  // Fill remaining slots from whatever the API returned (no duplicates)
   const extra = allTeamEntries
     .filter(t => !priorityIds.includes(t.id))
     .slice(0, Math.max(0, 5 - priorityIds.length))
@@ -471,10 +461,70 @@ export async function getTopScorers() {
       get(`${BASE}/players?team=${tid}&season=${WC_SEASON}&page=1`, { headers })
     )
   )
-  const players = pages
+  return pages
     .flatMap(p => (p.response || []).map(normalizePlayer))
     .filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i) // dedup
-  return players
+}
+
+export async function getTopScorers() {
+  if (isMock) return [...PLAYERS].sort((a, b) => b.goals - a.goals || b.intlGoals - a.intlGoals)
+
+  const topData = await get(
+    `${BASE}/players/topscorers?league=${WC_LEAGUE}&season=${WC_SEASON}`,
+    { headers }
+  )
+  // 🔍 DEBUG — borrar después
+  console.log('[topscorers] results:', topData.results, '| errors:', topData.errors)
+  console.log('[topscorers] response[0]:', topData.response?.[0]?.player?.name)
+
+  const topScorers = (topData.response || []).map(normalizePlayer)
+  if (topScorers.length > 5) return topScorers
+
+  console.log('[topscorers] → usando fallback _fetchPriorityPlayers')
+  return _fetchPriorityPlayers()
+}
+
+/** Top asistidores del Mundial */
+export async function getTopAssists() {
+  if (isMock) return [...PLAYERS].sort((a, b) => (b.assists || 0) - (a.assists || 0))
+
+  const data = await get(
+    `${BASE}/players/topassists?league=${WC_LEAGUE}&season=${WC_SEASON}`,
+    { headers }
+  )
+  const players = (data.response || []).map(normalizePlayer)
+  if (players.length > 5) return players
+
+  // Fallback — mismo set de equipos prioritarios que topscorers
+  return _fetchPriorityPlayers()
+}
+
+/** Top tarjetas amarillas del Mundial */
+export async function getTopYellowCards() {
+  if (isMock) return [...PLAYERS].sort((a, b) => (b.yellowCards || 0) - (a.yellowCards || 0))
+
+  const data = await get(
+    `${BASE}/players/topyellowcards?league=${WC_LEAGUE}&season=${WC_SEASON}`,
+    { headers }
+  )
+  const players = (data.response || []).map(normalizePlayer)
+  if (players.length > 5) return players
+
+  return _fetchPriorityPlayers()
+}
+
+/** Top tarjetas rojas del Mundial */
+export async function getTopRedCards() {
+  if (isMock) return [...PLAYERS].sort((a, b) => (b.redCards || 0) - (a.redCards || 0))
+
+  const data = await get(
+    `${BASE}/players/topredcards?league=${WC_LEAGUE}&season=${WC_SEASON}`,
+    { headers }
+  )
+  const players = (data.response || []).map(normalizePlayer)
+  if (players.length > 5) return players
+
+  return _fetchPriorityPlayers()
 }
 
 /**
@@ -948,15 +998,17 @@ function normalizePlayer(raw, teamId = null) {
     club,                   // '' when from national-team endpoint (filled later by getPlayerDetails)
     age:       p.age,
     nation:    nationality,
-    goals:     st.goals?.total    || 0,
-    assists:   st.goals?.assists  || 0,
-    rating:    parseFloat(st.games?.rating || '0').toFixed(1),
-    val:       '—',         // not available from API-Football
-    height:    p.height,
-    weight:    p.weight,
-    caps:      st.games?.appearences || 0,
-    intlGoals: st.goals?.total || 0,
-    teamId:    teamId || null, // WC-2026 national team API ID — used for team-detail navigation
+    goals:       st.goals?.total    || 0,
+    assists:     st.goals?.assists  || 0,
+    rating:      parseFloat(st.games?.rating || '0').toFixed(1),
+    val:         '—',         // not available from API-Football
+    height:      p.height,
+    weight:      p.weight,
+    caps:        st.games?.appearences || 0,
+    intlGoals:   st.goals?.total || 0,
+    yellowCards: st.cards?.yellow || 0,
+    redCards:    st.cards?.red    || 0,
+    teamId:      teamId || null, // WC-2026 national team API ID — used for team-detail navigation
   }
 }
 
