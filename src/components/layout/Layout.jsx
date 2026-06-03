@@ -28,7 +28,7 @@ const NAV_ITEMS = [
 
 // ── Menú desplegable del usuario ─────────────────────────────────────
 function UserMenu() {
-  const { user, logout, openAuthModal } = useAuth()
+  const { user, authLoading, logout, openAuthModal } = useAuth()
   const { lang }    = useLang()
   const navigate    = useNavigate()
   const [open, setOpen] = useState(false)
@@ -51,6 +51,10 @@ function UserMenu() {
     setOpen(false)
     logout()
   }
+
+  // While validating the stored token, render nothing to avoid
+  // flashing the sign-in button before the session is confirmed.
+  if (authLoading) return null
 
   // Sin sesión → botón que abre el modal
   if (!user) {

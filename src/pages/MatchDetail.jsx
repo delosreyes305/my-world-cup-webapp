@@ -222,9 +222,8 @@ export default function MatchDetail() {
             <h2 className="fw-600" style={{
               fontSize: 'clamp(13px, 3.5vw, 18px)',
               lineHeight: 1.3,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              overflowWrap: 'break-word',
+              wordBreak: 'break-word',
             }}>
               {team1}
               {navTeam1 && <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4, verticalAlign: 'middle' }}>↗</span>}
@@ -251,11 +250,6 @@ export default function MatchDetail() {
                 fontSize: 28, color: 'var(--text3)',
               }}>VS</div>
             )}
-            {(venue || stadium) && (
-              <div className="caption" style={{ fontSize: 11, marginTop: 6 }}>
-                {[venue, stadium].filter(Boolean).join(' · ')}
-              </div>
-            )}
           </div>
 
           {/* Away team — clickable → TeamDetail */}
@@ -276,15 +270,22 @@ export default function MatchDetail() {
             <h2 className="fw-600" style={{
               fontSize: 'clamp(13px, 3.5vw, 18px)',
               lineHeight: 1.3,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              overflowWrap: 'break-word',
+              wordBreak: 'break-word',
             }}>
               {team2}
               {navTeam2 && <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4, verticalAlign: 'middle' }}>↗</span>}
             </h2>
           </div>
         </div>
+
+        {/* Venue — between teams and date */}
+        {(venue || stadium) && (
+          <div className="caption" style={{ textAlign: 'center', marginBottom: 6, color: 'var(--text3)', fontSize: 12 }}>
+            <i className="fa-solid fa-location-dot" style={{ marginRight: 5, opacity: 0.6 }} />
+            {[venue, stadium].filter(Boolean).join(' · ')}
+          </div>
+        )}
 
         {/* Match date */}
         {date && (
