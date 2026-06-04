@@ -171,7 +171,7 @@ export default function TeamDetail() {
 
         {/* Banner */}
         <div style={{
-          height: 35,
+          height: 50,
           background: 'linear-gradient(135deg, #0a1628 0%, #1a2d4a 60%, #0f2040 100%)',
           position: 'relative',
           flexShrink: 0,
@@ -183,17 +183,17 @@ export default function TeamDetail() {
         </div>
 
         <div style={{ padding: '0 16px 16px' }}>
-          {/* Flag + badges row */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
-            {/* Flag overlapping banner */}
+          {/* Flag + name + badges */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginTop: 25 }}>
+
+            {/* Flag */}
             {(() => {
               const iso = TEAM_ISO[team.name]
               return (
                 <div style={{
                   width: 90, height: 60, borderRadius: 8,
                   border: '2.5px solid var(--card)',
-                  marginTop: 28, flexShrink: 0,
-                  overflow: 'hidden', background: '#0a1628',
+                  flexShrink: 0, overflow: 'hidden', background: '#0a1628',
                 }}>
                   {iso
                     ? <img
@@ -215,42 +215,43 @@ export default function TeamDetail() {
               )
             })()}
 
-            {/* Badges */}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', paddingBottom: 2 }}>
-              {team.confederation && (
-                <span className="badge" style={{
-                  fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
-                  background: 'rgba(240,180,41,0.12)', color: 'var(--gold)',
-                  border: '0.5px solid rgba(240,180,41,0.3)',
-                }}>
-                  {team.confederation}
-                </span>
-              )}
-              {groupLetter && (
-                <span className="badge" style={{
-                  fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
-                  background: 'rgba(55,138,221,0.12)', color: 'var(--electric)',
-                  border: '0.5px solid rgba(55,138,221,0.25)',
-                }}>
-                  {lang === 'es' ? 'Grupo' : 'Group'} {groupLetter}
-                </span>
-              )}
-              {rank && (
-                <span className="badge" style={{
-                  fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
-                  background: 'rgba(29,158,117,0.1)', color: 'var(--green)',
-                  border: '0.5px solid rgba(29,158,117,0.25)',
-                }}>
-                  #{rank} FIFA
-                </span>
-              )}
+            {/* Name + badges stacked */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+              <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0, lineHeight: 1.2,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {team.name}
+              </h1>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {team.confederation && (
+                  <span className="badge" style={{
+                    fontSize: 10, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
+                    background: 'rgba(240,180,41,0.12)', color: 'var(--gold)',
+                    border: '0.5px solid rgba(240,180,41,0.3)',
+                  }}>
+                    {team.confederation}
+                  </span>
+                )}
+                {groupLetter && (
+                  <span className="badge" style={{
+                    fontSize: 10, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
+                    background: 'rgba(55,138,221,0.12)', color: 'var(--electric)',
+                    border: '0.5px solid rgba(55,138,221,0.25)',
+                  }}>
+                    {lang === 'es' ? 'Grupo' : 'Group'} {groupLetter}
+                  </span>
+                )}
+                {rank && (
+                  <span className="badge" style={{
+                    fontSize: 10, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
+                    background: 'rgba(29,158,117,0.1)', color: 'var(--green)',
+                    border: '0.5px solid rgba(29,158,117,0.25)',
+                  }}>
+                    #{rank} FIFA
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Name */}
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '10px 0 0' }}>
-            {team.name}
-          </h1>
 
           {/* Divider */}
           <div style={{ height: '0.5px', background: 'var(--border)', margin: '14px 0' }} />
