@@ -200,7 +200,7 @@ export default function TeamDetail() {
                 </span>
               )}
             </div>
-            <div className="flex gap-8 flex-wrap">
+            <div className="flex gap-8 flex-wrap" style={{ marginTop: 10 }}>
               <button
                 className={`btn btn-sm ${isFav('teams', team.id) ? 'btn-gold' : 'btn-outline'}`}
                 onClick={() => toggleFav('teams', team)}

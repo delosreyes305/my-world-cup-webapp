@@ -57,7 +57,10 @@ def create_app():
                 'https://*.vercel.app',
                 'https://myfootballworldcup.com',
                 'https://www.myfootballworldcup.com',
-            ]
+            ],
+            'allow_headers': ['Content-Type', 'Authorization'],
+            'methods':       ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+            'supports_credentials': True,
         }
     })
 
@@ -85,7 +88,7 @@ def create_app():
     # ── Crear tablas ──────────────────────────────────────────────────
     with app.app_context():
         db.create_all()
-        print('✅ Base de datos lista')
+        print('Base de datos lista')
 
     return app
 
@@ -111,7 +114,7 @@ if os.environ.get('WERKZEUG_RUN_MAIN') != 'false':
         id='news_notifier', replace_existing=True,
     )
     _scheduler.start()
-    print('⏰ Scheduler de notificaciones iniciado '
+    print('Scheduler de notificaciones iniciado '
           '(partidos cada 15 min · noticias cada 3 h)')
 
 if __name__ == '__main__':
