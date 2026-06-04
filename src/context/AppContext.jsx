@@ -5,7 +5,7 @@ const AppContext = createContext(null)
 
 const defaultFavs = { teams: [], players: [], matches: [], articles: [] }
 
-// frontend usa plural ('teams'), API usa singular ('team')
+// frontend uses plural ('teams'), API uses singular ('team')
 const SINGULAR = { teams: 'team', players: 'player', matches: 'match', articles: 'article' }
 
 function migrateFavs(raw) {
@@ -19,7 +19,7 @@ function migrateFavs(raw) {
   }
 }
 
-// Hash de string → entero positivo (para usar como item_id en la API)
+// Hash string → positive integer (used as item_id in the API)
 function newsHash(str) {
   let h = 0
   for (let i = 0; i < str.length; i++) {
@@ -61,23 +61,32 @@ export function AppProvider({ children }) {
   const [toast,       setToast      ] = useState(null)
   const [searchOpen,  setSearchOpen ] = useState(false)
 
-  // ── Sincronizar favoritos cuando cambia el estado de auth ─────────
+  // ── Sync favorites when auth state changes ─────────────────────
   useEffect(() => {
-    if (authLoading) return   // esperar a que se valide el token guardado
+    if (authLoading) return   // wait for stored token to be validated
 
     if (user && token) {
-      // Logueado → cargar desde API
-      apiFetch(token, '/api/favorites')
-        .then(r => r.ok ? r.json() : defaultFavs)
+      // Logged in → load from API
+      // Use raw fetch (not apiFetch) to avoid wiping favorites on network error
+      fetch('/api/favorites', {
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+        .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
         .then(data => setFavorites(migrateFavs(data)))
-        .catch(() => setFavorites(defaultFavs))
+        .catch(err => {
+          // Do not wipe favorites on failure — keep current in-memory state
+          console.warn('[favorites] GET failed, keeping current state:', err)
+        })
     } else {
-      // No logueado → localStorage
+      // Not logged in → localStorage
       setFavorites(loadLocalFavs())
     }
   }, [user, token, authLoading])
 
-  // Persistir en localStorage solo cuando no hay sesión activa
+  // Persist to localStorage only when there is no active session
   useEffect(() => {
     if (!user && !authLoading) {
       localStorage.setItem('mwc_favs', JSON.stringify(favorites))
@@ -89,11 +98,11 @@ export function AppProvider({ children }) {
     setTimeout(() => setToast(null), duration)
   }, [])
 
-  // ── Toggle favorito ───────────────────────────────────────────────
+  // ── Toggle favorite ────────────────────────────────────────────────
   const toggleFav = useCallback(async (type, item) => {
     if (!item || item.id == null) return
 
-    // Sin sesión → mostrar tarjeta "inicia sesión para usar favoritos"
+    // No session → show "log in to use favorites" card
     if (!user) {
       setAuthRequiredOpen(true)
       return
@@ -102,7 +111,7 @@ export function AppProvider({ children }) {
     const arr  = favorites[type] || []
     const isIn = arr.some(x => x?.id === item.id)
 
-    // Actualización optimista
+    // Optimistic update
     setFavorites(prev => {
       const list = prev[type] || []
       return {
@@ -113,20 +122,20 @@ export function AppProvider({ children }) {
       }
     })
 
-    // Sincronizar con API
+    // Sync with API
     const singularType = SINGULAR[type] || type
-    // Los artículos usan URL/UUID como id → convertir a entero con hash para la API
+    // Articles use URL/UUID as id → convert to integer with hash for the API
     const apiId = type === 'articles' ? newsHash(String(item.id)) : item.id
     try {
       if (isIn) {
         await apiFetch(token, `/api/favorites/${singularType}/${apiId}`, { method: 'DELETE' })
-        showToast(user.first_name ? `Eliminado de favoritos` : 'Removed from favorites')
+        showToast('Removed from favorites')
       } else {
         await apiFetch(token, '/api/favorites', {
           method: 'POST',
           body:   JSON.stringify({ type: singularType, item_id: apiId, item_data: item }),
         })
-        showToast(type === 'articles' ? '📰 Noticia guardada' : `${item.name || 'Item'} agregado a favoritos`)
+        showToast(type === 'articles' ? '📰 Article saved' : `${item.name || 'Item'} added to favorites`)
       }
     } catch (err) {
       // Revert optimistic update on error
@@ -163,6 +172,6 @@ export function AppProvider({ children }) {
 
 export const useApp = () => {
   const ctx = useContext(AppContext)
-  if (!ctx) throw new Error('useApp debe usarse dentro de AppProvider')
+  if (!ctx) throw new Error('useApp must be used inside AppProvider')
   return ctx
 }

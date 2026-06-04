@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { getTeams, getAllTeamPlayers, getTeamFixtures, getStandings, TEAM_METADATA } from '../services/sportsService'
+import { getTeams, getAllTeamPlayers, getTeamFixtures, getStandings, TEAM_METADATA, TEAM_ISO } from '../services/sportsService'
 
 // ─── Sub-components ──────────────────────────────────
 
@@ -167,77 +167,141 @@ export default function TeamDetail() {
       </button>
 
       {/* ── Header ── */}
-      <div className="card mb-16">
-        <div className="flex-center gap-24" style={{ flexWrap: 'wrap' }}>
+      <div className="card mb-16" style={{ padding: 0, overflow: 'hidden' }}>
 
-          {/* Logo */}
-          <div aria-hidden="true" style={{ flexShrink: 0 }}>
-            <TeamLogo flag={team.flag} name={team.name} size={80} />
-          </div>
+        {/* Banner */}
+        <div style={{
+          height: 35,
+          background: 'linear-gradient(135deg, #0a1628 0%, #1a2d4a 60%, #0f2040 100%)',
+          position: 'relative',
+          flexShrink: 0,
+        }}>
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(240,180,41,0.03) 20px, rgba(240,180,41,0.03) 40px)',
+          }} />
+        </div>
 
-          {/* Info */}
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <div className="flex-center gap-12 mb-6" style={{ flexWrap: 'wrap' }}>
-              <h1 className="fw-600" style={{ fontSize: 28, margin: 0 }}>{team.name}</h1>
+        <div style={{ padding: '0 16px 16px' }}>
+          {/* Flag + badges row */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
+            {/* Flag overlapping banner */}
+            {(() => {
+              const iso = TEAM_ISO[team.name]
+              return (
+                <div style={{
+                  width: 90, height: 60, borderRadius: 8,
+                  border: '2.5px solid var(--card)',
+                  marginTop: 28, flexShrink: 0,
+                  overflow: 'hidden', background: '#0a1628',
+                }}>
+                  {iso
+                    ? <img
+                        src={`https://flagcdn.com/w160/${iso}.png`}
+                        alt={team.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        onError={e => { e.target.style.display = 'none' }}
+                      />
+                    : team.flag && typeof team.flag === 'string' && team.flag.startsWith('http')
+                      ? <img
+                          src={team.flag}
+                          alt={team.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block', padding: 6 }}
+                          onError={e => { e.target.style.display = 'none' }}
+                        />
+                      : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🏳️</div>
+                  }
+                </div>
+              )
+            })()}
+
+            {/* Badges */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', paddingBottom: 2 }}>
               {team.confederation && (
                 <span className="badge" style={{
-                  fontSize: 11,
-                  background: 'rgba(240,180,41,0.12)',
-                  color: 'var(--gold)',
-                  border: '1px solid rgba(240,180,41,0.2)',
+                  fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
+                  background: 'rgba(240,180,41,0.12)', color: 'var(--gold)',
+                  border: '0.5px solid rgba(240,180,41,0.3)',
                 }}>
                   {team.confederation}
                 </span>
               )}
               {groupLetter && (
                 <span className="badge" style={{
-                  fontSize: 11,
-                  background: 'rgba(99,102,241,0.12)',
-                  color: 'var(--blue)',
-                  border: '1px solid rgba(99,102,241,0.2)',
+                  fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
+                  background: 'rgba(55,138,221,0.12)', color: 'var(--electric)',
+                  border: '0.5px solid rgba(55,138,221,0.25)',
                 }}>
                   {lang === 'es' ? 'Grupo' : 'Group'} {groupLetter}
                 </span>
               )}
+              {rank && (
+                <span className="badge" style={{
+                  fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
+                  background: 'rgba(29,158,117,0.1)', color: 'var(--green)',
+                  border: '0.5px solid rgba(29,158,117,0.25)',
+                }}>
+                  #{rank} FIFA
+                </span>
+              )}
             </div>
-            <div className="flex gap-8 flex-wrap" style={{ marginTop: 10 }}>
-              <button
-                className={`btn btn-sm ${isFav('teams', team.id) ? 'btn-gold' : 'btn-outline'}`}
-                onClick={() => toggleFav('teams', team)}
-              >
-                {isFav('teams', team.id) ? t('common','favorited') : t('common','add_fav')}
-              </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/predict', { state: { preselect: team.id } })}>
-                {lang === 'es' ? 'Predecir partido' : 'Predict Match'}
-              </button>
-            </div>
+          </div>
+
+          {/* Name */}
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '10px 0 0' }}>
+            {team.name}
+          </h1>
+
+          {/* Divider */}
+          <div style={{ height: '0.5px', background: 'var(--border)', margin: '14px 0' }} />
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                padding: '8px 12px', borderRadius: 'var(--radius)', fontSize: 13, fontWeight: 500,
+                cursor: 'pointer', border: isFav('teams', team.id) ? '0.5px solid rgba(240,180,41,0.4)' : '0.5px solid var(--border2)',
+                background: isFav('teams', team.id) ? 'rgba(240,180,41,0.1)' : 'var(--card2)',
+                color: isFav('teams', team.id) ? 'var(--gold)' : 'var(--text)',
+              }}
+              onClick={() => toggleFav('teams', team)}
+            >
+              <i className={`fa-${isFav('teams', team.id) ? 'solid' : 'regular'} fa-heart`} style={{ fontSize: 13 }} />
+              {isFav('teams', team.id) ? t('common','favorited') : t('common','add_fav')}
+            </button>
+            <button
+              style={{
+                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                padding: '8px 12px', borderRadius: 'var(--radius)', fontSize: 13, fontWeight: 500,
+                cursor: 'pointer', border: '0.5px solid var(--border2)',
+                background: 'var(--card2)', color: 'var(--text)',
+              }}
+              onClick={() => navigate('/predict', { state: { preselect: team.id } })}
+            >
+              <i className="fa-solid fa-robot" style={{ fontSize: 13 }} />
+              {lang === 'es' ? 'Predecir partido' : 'Predict Match'}
+            </button>
           </div>
         </div>
       </div>
 
       {/* ── Stats row ── */}
-      <div className="grid-4 mb-16">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0,1fr))', gap: 8, marginBottom: 16 }}>
         {[
-          {
-            label: lang === 'es' ? 'Ranking FIFA' : 'FIFA Rank',
-            val:   rank != null ? `#${rank}` : '—',
-          },
-          {
-            label: lang === 'es' ? 'Fundado' : 'Founded',
-            val:   team.founded || '—',
-          },
-          {
-            label: lang === 'es' ? 'Títulos mundiales' : 'WC Titles',
-            val:   titles > 0 ? titles : '—',
-          },
-          {
-            label: lang === 'es' ? 'Puntos' : 'Group Pts',
-            val:   team.pts ?? (groupRows ? (groupRows.find(r => r.name === team.name)?.pts ?? '—') : '—'),
-          },
+          { label: lang === 'es' ? 'Ranking FIFA' : 'FIFA Rank', val: rank != null ? `#${rank}` : '—' },
+          { label: lang === 'es' ? 'Fundado'      : 'Founded',   val: team.founded || '—' },
+          { label: lang === 'es' ? 'Títulos'      : 'WC Titles', val: titles > 0 ? `${titles}×` : '—' },
+          { label: lang === 'es' ? 'Puntos'       : 'Group Pts', val: team.pts ?? (groupRows ? (groupRows.find(r => r.name === team.name)?.pts ?? '—') : '—') },
         ].map(s => (
-          <div key={s.label} className="card-sm" style={{ textAlign: 'center' }}>
-            <div className="label">{s.label}</div>
-            <div className="val text-gold">{s.val}</div>
+          <div key={s.label} style={{
+            background: 'var(--card2)', borderRadius: 'var(--radius)',
+            padding: '12px 16px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>
+              {s.label}
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>{s.val}</div>
           </div>
         ))}
       </div>

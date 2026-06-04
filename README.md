@@ -224,6 +224,42 @@ JWT_SECRET_KEY=paste_the_generated_key_here
 - Git
 
 ---
+ 
+### GitHub Codespaces (recommended for quick start)
+ 
+If you're opening this project in a GitHub Codespace, the Node environment is already ready. For the backend, follow these steps once:
+ 
+**First time only — install venv and dependencies:**
+```bash
+sudo apt-get update && sudo apt-get install python3-venv -y
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# → Open backend/.env and fill in DATABASE_URL and JWT_SECRET_KEY
+```
+ 
+**Every time you open the Codespace — two terminals:**
+ 
+Terminal 1 — Frontend:
+```bash
+npm install      # only needed first time
+npm run dev
+```
+ 
+Terminal 2 — Backend:
+```bash
+cd backend
+source venv/bin/activate
+python3 app.py
+```
+ 
+> **Port visibility:** The Codespace exposes port 3000 automatically. If login/favorites don't work, go to the **PORTS** tab, find port 5000, right-click → **Port Visibility → Public**.
+ 
+> **Note:** `python` is not available in Codespaces — always use `python3`.
+ 
+---
 
 ### 1. Clone the repository
 
@@ -322,7 +358,7 @@ python app.py
 
 ---
 
-### 🔄 Restart Flask Server
+### Restart Flask Server
 
 If the server crashes or you changed backend code:
 
@@ -468,4 +504,4 @@ Set all `backend/.env` variables in your chosen platform's dashboard.
 
 ---
 
-*Not affiliated with FIFA. Built with ❤️ for football fans around the world.*
+*Not affiliated with FIFA. Built with love for football fans around the world.*

@@ -16,14 +16,26 @@ def get_favorites():
     user_id = int(get_jwt_identity())
     favs    = Favorite.query.filter_by(user_id=user_id).order_by(Favorite.created_at).all()
 
+    PLURAL = {'team': 'teams', 'player': 'players', 'match': 'matches', 'article': 'articles'}
     result = {'teams': [], 'players': [], 'matches': [], 'articles': []}
     for fav in favs:
-        key = fav.type + 's'
+        key = PLURAL.get(fav.type, fav.type + 's')
         if key in result and fav.item_data:
             result[key].append(fav.item_data)
 
     return jsonify(result), 200
 
+@favorites_bp.route('/raw', methods=['GET'])
+@jwt_required()
+def get_favorites_raw():
+    user_id = int(get_jwt_identity())
+    favs = Favorite.query.filter_by(user_id=user_id).all()
+    return jsonify([{
+        'id': f.id,
+        'type': f.type,
+        'item_id': f.item_id,
+        'item_data': f.item_data,
+    } for f in favs]), 200
 
 # ── POST /api/favorites ──────────────────────────────────────────────
 @favorites_bp.route('', methods=['POST'], strict_slashes=False)
