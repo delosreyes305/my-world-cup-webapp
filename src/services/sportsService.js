@@ -348,28 +348,56 @@ const NATIONAL_STADIUMS = {
   'New Zealand':          { name: 'Eden Park',                   city: 'Auckland',       capacity: 48276 },
 }
 
+/**
+ * Fetch live FIFA rankings from API-Football.
+ * Returns a map of { teamName: rankPosition } for all ranked teams.
+ * Falls back to null if the endpoint is unavailable (plan restriction, etc.)
+ */
+async function _getFifaRankMap() {
+  try {
+    const data = await get(
+      `${BASE}/teams/rankings?type=FIFA`,
+      { headers }
+    )
+    if (!data.response?.length) return null
+    const map = {}
+    for (const item of data.response) {
+      if (item.team?.name && item.ranking?.position) {
+        map[item.team.name] = item.ranking.position
+      }
+    }
+    return Object.keys(map).length ? map : null
+  } catch {
+    return null  // silently fall back to TEAM_METADATA
+  }
+}
+
 export async function getTeams() {
   if (isMock) return TEAMS
 
-  const data = await get(
-    `${BASE}/teams?league=${WC_LEAGUE}&season=${WC_SEASON}`,
-    { headers }
-  )
-  return (data.response || []).map(r => {
+  // Fetch teams and FIFA rankings in parallel — rankings call is best-effort
+  const [teamsData, rankMap] = await Promise.all([
+    get(`${BASE}/teams?league=${WC_LEAGUE}&season=${WC_SEASON}`, { headers }),
+    _getFifaRankMap(),
+  ])
+
+  return (teamsData.response || []).map(r => {
     const name          = r.team.name
     const confederation = CONFEDERATION_MAP[name] || 'Other'
     const meta          = TEAM_METADATA[name] || { rank: null, titles: 0 }
 
+    // FIFA rank: prefer live API ranking, fall back to TEAM_METADATA snapshot
+    const rank = rankMap?.[name] ?? meta.rank
+
     // Static map is ground-truth for all 48 WC teams — always prefer it.
     // The API sometimes returns wrong venues (e.g. Oakland Coliseum for Mexico).
-    // For teams not in the map, fall back to whatever the API provides.
     const staticVenue = NATIONAL_STADIUMS[name]
     const venue = staticVenue
       ? {
           name:     staticVenue.name,
           city:     staticVenue.city,
           capacity: staticVenue.capacity,
-          image:    r.venue?.image || '',   // keep API image if any
+          image:    r.venue?.image || '',
         }
       : {
           name:     r.venue?.name     || '',
@@ -382,12 +410,12 @@ export async function getTeams() {
       id:            r.team.id,
       name,
       code:          r.team.code  || '',
-      flag:          r.team.logo,        // HTTPS image URL
+      flag:          r.team.logo,
       country:       r.team.country,
       founded:       r.team.founded || null,
       confederation,
-      region:        confederation,      // alias used by filter
-      rank:          meta.rank,
+      region:        confederation,
+      rank,
       titles:        meta.titles,
       coach:         null,
       gf: 0, ga: 0, pts: 0,
@@ -407,6 +435,36 @@ export async function getTeams() {
  * Todos los partidos del Mundial para un equipo específico.
  * @param {number} teamId
  */
+/**
+ * Head coach info for a national team.
+ * Returns coach object with name, photo, nationality, age and career array.
+ * @param {number} teamId
+ */
+export async function getCoach(teamId) {
+  if (isMock || !teamId) return null
+
+  const data = await get(`${BASE}/coachs?team=${teamId}`, { headers })
+  const c = data.response?.[0]
+  if (!c) return null
+
+  return {
+    id:          c.id,
+    name:        c.name,
+    firstName:   c.firstname,
+    lastName:    c.lastname,
+    photo:       c.photo,
+    nationality: c.nationality,
+    age:         c.age,
+    birth:       c.birth,
+    career: (c.career || []).map(e => ({
+      team:  e.team?.name,
+      logo:  e.team?.logo,
+      start: e.start,
+      end:   e.end,
+    })),
+  }
+}
+
 export async function getTeamFixtures(teamId) {
   if (isMock) {
     // In mock, match by team name — look up from TEAMS
