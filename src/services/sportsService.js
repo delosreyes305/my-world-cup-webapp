@@ -866,18 +866,67 @@ export async function getTeamForm(teamId, last = 5) {
 // ─────────────────────────────────────────────────────
 
 export async function getMatchPrediction(fixtureId) {
-  if (isMock) return { home: 52, draw: 22, away: 26 }
+  if (isMock) return { home: 52, draw: 22, away: 26, winner: null, advice: null, winnerComment: null }
+
+  const data = await get(`${BASE}/predictions?fixture=${fixtureId}`, { headers })
+  const p = data.response?.[0]
+  if (!p) return null
+  const pred = p.predictions
+  return {
+    home:          parseInt(pred?.percent?.home || '50'),
+    draw:          parseInt(pred?.percent?.draw || '20'),
+    away:          parseInt(pred?.percent?.away || '30'),
+    winner:        pred?.winner?.name    || null,
+    winnerComment: pred?.winner?.comment || null,
+    advice:        pred?.advice          || null,
+  }
+}
+
+/**
+ * Head-to-head history between two teams.
+ * @param {number} team1Id
+ * @param {number} team2Id
+ * @param {number} last — number of matches to return (default 5)
+ */
+export async function getHeadToHead(team1Id, team2Id, last = 5) {
+  if (isMock || !team1Id || !team2Id) return []
 
   const data = await get(
-    `${BASE}/predictions?fixture=${fixtureId}`,
+    `${BASE}/fixtures/headtohead?h2h=${team1Id}-${team2Id}&last=${last}`,
     { headers }
   )
-  const pred = data.response?.[0]?.predictions
+  return (data.response || []).map(f => {
+    const h = f.teams?.home
+    const a = f.teams?.away
+    const g = f.goals
+    return {
+      id:     f.fixture?.id,
+      date:   f.fixture?.date,
+      home:   h?.name,
+      away:   a?.name,
+      score:  g?.home != null && g?.away != null ? `${g.home}–${g.away}` : null,
+      status: f.fixture?.status?.short,
+      winner: h?.winner ? h.name : a?.winner ? a.name : 'Draw',
+    }
+  }).reverse() // oldest first
+}
+
+/**
+ * Pre-match odds — bookmaker 8 (Bet365), last 7 days only.
+ */
+export async function getMatchOdds(fixtureId) {
+  if (isMock) return null
+  const data = await get(`${BASE}/odds?fixture=${fixtureId}&bookmaker=8`, { headers })
+  const bk = data.response?.[0]?.bookmakers?.[0]
+  if (!bk) return null
+  const market = bk.bets?.find(b => b.name === 'Match Winner')
+  if (!market) return null
+  const find = val => market.values?.find(v => v.value === val)?.odd ?? null
   return {
-    home:   parseInt(pred?.percent?.home  || '50'),
-    draw:   parseInt(pred?.percent?.draw  || '20'),
-    away:   parseInt(pred?.percent?.away  || '30'),
-    winner: pred?.winner?.name || null,
+    bookmaker: bk.bookmaker?.name ?? 'Bet365',
+    home: find('Home'),
+    draw: find('Draw'),
+    away: find('Away'),
   }
 }
 

@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { getMatchStats, getMatchEvents, getTeams } from '../services/sportsService'
+import { getMatchStats, getMatchEvents, getTeams, getMatchPrediction, getMatchOdds, getHeadToHead } from '../services/sportsService'
 import { MATCHES, TEAMS } from '../data/mockData'
 import ApiStatus from '../components/common/ApiStatus'
 
@@ -59,12 +59,14 @@ function TeamFlag({ flag, name, size = 64 }) {
 
 // ─── Event icon (goal / yellow / red / sub / HT) ───────
 function eventIcon(e) {
-  if (e.type === 'Goal')  return '⚽'
-  if (e.type === 'Card')  return e.detail?.toLowerCase().includes('yellow') ? '🟨' : '🟥'
-  if (e.type === 'subst') return '🔄'
-  if (e.type === 'HT')    return '⏸️'
-  if (e.type === 'VAR')   return '📺'
-  return '•'
+  if (e.type === 'Goal')  return <i className="fa-solid fa-futbol" style={{ color: 'var(--gold)', fontSize: 13 }} />
+  if (e.type === 'Card')  return e.detail?.toLowerCase().includes('yellow')
+    ? <i className="fa-solid fa-square" style={{ color: '#f0b429', fontSize: 13 }} />
+    : <i className="fa-solid fa-square" style={{ color: 'var(--red)', fontSize: 13 }} />
+  if (e.type === 'subst') return <i className="fa-solid fa-arrow-right-arrow-left" style={{ color: 'var(--electric)', fontSize: 12 }} />
+  if (e.type === 'HT')    return <i className="fa-solid fa-pause" style={{ color: 'var(--text3)', fontSize: 12 }} />
+  if (e.type === 'VAR')   return <i className="fa-solid fa-tv" style={{ color: 'var(--text3)', fontSize: 12 }} />
+  return <i className="fa-solid fa-circle" style={{ color: 'var(--text3)', fontSize: 8 }} />
 }
 
 // ─── Match date helper ─────────────────────────────────
@@ -116,6 +118,23 @@ export default function MatchDetail() {
   const { data: events, loading: eventsLoad } =
     useApi(getMatchEvents, Number(id), { skip, ttl: 60_000 })
 
+  // Predictions + odds — only for upcoming/live matches
+  const skipPred = !match || match.status === 'ft'
+  const { data: prediction, loading: predLoad } =
+    useApi(getMatchPrediction, Number(id), { skip: skipPred, ttl: 1_800_000 })
+  const { data: odds, loading: oddsLoad } =
+    useApi(getMatchOdds, Number(id), { skip: skipPred, ttl: 1_800_000 })
+
+  // Head-to-head — only when both team IDs are available
+  const h2hKey = match?.team1Id && match?.team2Id
+    ? `${match.team1Id}-${match.team2Id}` : null
+  const { data: h2h, loading: h2hLoad } =
+    useApi(
+      () => getHeadToHead(match?.team1Id, match?.team2Id, 5),
+      h2hKey,
+      { skip: !h2hKey, ttl: 86_400_000 }
+    )
+
   // ── Auth gate — wait for token validation before showing sign-in ──
   if (!user && !authLoading) return (
     <div className="page-content page-enter" style={{ textAlign: 'center', padding: '80px 24px' }}>
@@ -152,7 +171,7 @@ export default function MatchDetail() {
   // ── 404 ──────────────────────────────────────────────
   if (!match) return (
     <div className="page-content" style={{ textAlign: 'center', padding: '80px 0' }}>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+      <i className="fa-solid fa-magnifying-glass" style={{ fontSize: 48, marginBottom: 16, color: 'var(--text3)', display: 'block' }} />
       <h2>{t('match','not_found')}</h2>
       <button className="btn btn-outline mt-16" onClick={() => navigate('/matches')}>
         ← {t('common','back')}
@@ -316,6 +335,102 @@ export default function MatchDetail() {
         </div>
       </div>
 
+      {/* ── Predictions + Odds ── */}
+      {!skipPred && (predLoad || prediction || odds) && (
+        <div className="card mb-16">
+          <h3 className="fw-600 mb-16" style={{ fontSize: 15 }}>
+            <i className="fa-solid fa-chart-simple" style={{ marginRight: 8, color: 'var(--gold)' }} />
+            {lang === 'es' ? 'Predicción del partido' : 'Match Prediction'}
+          </h3>
+
+          {predLoad ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 20, borderRadius: 6 }} />)}
+            </div>
+          ) : prediction && !(prediction.home === prediction.draw && prediction.draw === prediction.away) ? (
+            <>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
+                {[
+                  { label: team1, pct: prediction.home, color: 'var(--gold)' },
+                  { label: lang === 'es' ? 'Empate' : 'Draw', pct: prediction.draw, color: 'var(--text3)' },
+                  { label: team2, pct: prediction.away, color: 'var(--electric)' },
+                ].map(({ label, pct, color }) => (
+                  <div key={label} style={{ textAlign: 'center' }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color, lineHeight: 1, marginBottom: 4 }}>
+                      {pct}%
+                    </div>
+                    <div className="caption" style={{ fontSize: 10, color: 'var(--text3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {label}
+                    </div>
+                    <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, marginTop: 6 }}>
+                      <div style={{ width: `${pct}%`, height: '100%', borderRadius: 2, background: color, transition: 'width 0.9s ease' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {prediction.winner && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '10px 14px', borderRadius: 8,
+                  background: 'rgba(240,180,41,0.08)',
+                  border: '0.5px solid rgba(240,180,41,0.25)',
+                  marginBottom: prediction.advice ? 10 : 0,
+                }}>
+                  <i className="fa-solid fa-trophy" style={{ color: 'var(--gold)', fontSize: 14, flexShrink: 0 }} />
+                  <span style={{ fontSize: 13 }}>
+                    <strong style={{ color: 'var(--gold)' }}>
+                      {lang === 'es' ? 'Predicción: ' : 'Prediction: '}
+                    </strong>
+                    {prediction.winner}
+                    {prediction.winnerComment ? ` — ${prediction.winnerComment}` : ''}
+                  </span>
+                </div>
+              )}
+
+              {prediction.advice && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, fontSize: 12, color: 'var(--text3)', fontStyle: 'italic', marginTop: 8 }}>
+                  <i className="fa-solid fa-lightbulb" style={{ marginTop: 1, flexShrink: 0 }} />
+                  {prediction.advice}
+                </div>
+              )}
+            </>
+          ) : null}
+
+          {!oddsLoad && odds && (
+            <>
+              <div style={{ height: '0.5px', background: 'var(--border)', margin: '16px 0' }} />
+              <div className="caption mb-8" style={{ color: 'var(--text3)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                {lang === 'es' ? `Cuotas · ${odds.bookmaker}` : `Odds · ${odds.bookmaker}`}
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                {[
+                  { label: '1', sublabel: team1, val: odds.home, color: 'var(--gold)' },
+                  { label: 'X', sublabel: lang === 'es' ? 'Empate' : 'Draw', val: odds.draw, color: 'var(--text3)' },
+                  { label: '2', sublabel: team2, val: odds.away, color: 'var(--electric)' },
+                ].map(({ label, sublabel, val, color }) => (
+                  <div key={label} style={{
+                    background: 'var(--card2)', borderRadius: 8, padding: '10px 8px', textAlign: 'center',
+                    border: '0.5px solid var(--border)',
+                  }}>
+                    <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>{label}</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color, lineHeight: 1, marginBottom: 4 }}>
+                      {val ?? '—'}
+                    </div>
+                    <div className="caption" style={{ fontSize: 9, color: 'var(--text3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {sublabel}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="caption" style={{ color: 'var(--text3)', fontSize: 9, marginTop: 8, textAlign: 'center' }}>
+                {lang === 'es' ? 'Las apuestas son solo informativas. Juega responsablemente.' : 'Odds are informational only. Gamble responsibly.'}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       {/* ── Timeline + Stats ── */}
       <div className="grid-2 mb-16">
 
@@ -399,6 +514,72 @@ export default function MatchDetail() {
           )}
         </div>
       </div>
+
+      {/* ── Head to Head ── */}
+      {(h2hLoad || (h2h && h2h.length > 0)) && (
+        <div className="card mb-16">
+          <h3 className="fw-600 mb-16" style={{ fontSize: 15 }}>
+            <>
+              <i className="fa-solid fa-shield-halved" style={{ marginRight: 8, color: 'var(--gold)' }} />
+              {lang === 'es' ? 'Historial de enfrentamientos' : 'Head to Head'}
+            </>
+          </h3>
+
+          {h2hLoad ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 36, borderRadius: 6 }} />)}
+            </div>
+          ) : (
+            <>
+              {/* Win summary */}
+              {(() => {
+                const t1Wins = h2h.filter(m => m.winner === team1).length
+                const t2Wins = h2h.filter(m => m.winner === team2).length
+                const draws  = h2h.filter(m => m.winner === 'Draw').length
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
+                    {[
+                      { label: team1, val: t1Wins, color: 'var(--gold)' },
+                      { label: lang === 'es' ? 'Empates' : 'Draws', val: draws, color: 'var(--text3)' },
+                      { label: team2, val: t2Wins, color: 'var(--electric)' },
+                    ].map(({ label, val, color }) => (
+                      <div key={label} style={{ textAlign: 'center', background: 'var(--card2)', borderRadius: 8, padding: '10px 8px', border: '0.5px solid var(--border)' }}>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, color, lineHeight: 1, marginBottom: 4 }}>{val}</div>
+                        <div className="caption" style={{ fontSize: 10, color: 'var(--text3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
+
+              {/* Match list */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {h2h.map((m, i) => {
+                  const isT1Win = m.winner === team1
+                  const isT2Win = m.winner === team2
+                  const isDraw  = m.winner === 'Draw'
+                  const year    = m.date ? new Date(m.date).getFullYear() : ''
+                  return (
+                    <div key={m.id || i} style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '8px 12px', borderRadius: 8,
+                      background: 'var(--card2)', border: '0.5px solid var(--border)',
+                    }}>
+                      <span className="caption" style={{ fontSize: 10, color: 'var(--text3)', flexShrink: 0, minWidth: 32 }}>{year}</span>
+                      <span style={{ flex: 1, fontSize: 12, textAlign: 'right', fontWeight: isT1Win ? 700 : 400, color: isT1Win ? 'var(--gold)' : 'var(--text)' }}>{m.home}</span>
+                      <span style={{
+                        fontSize: 12, fontWeight: 700, flexShrink: 0, minWidth: 48, textAlign: 'center',
+                        color: isDraw ? 'var(--text3)' : isT1Win ? 'var(--gold)' : 'var(--electric)',
+                      }}>{m.score ?? 'vs'}</span>
+                      <span style={{ flex: 1, fontSize: 12, textAlign: 'left', fontWeight: isT2Win ? 700 : 400, color: isT2Win ? 'var(--electric)' : 'var(--text)' }}>{m.away}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── Venue ── */}
       {(venue || stadium) && (
