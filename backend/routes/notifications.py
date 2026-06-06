@@ -42,3 +42,7 @@ def update_prefs():
 
     db.session.commit()
     return jsonify({'message': 'Preferencias guardadas', 'prefs': pref.to_dict()}), 200
+
+
+
+

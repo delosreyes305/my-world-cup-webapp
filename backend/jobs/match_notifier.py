@@ -82,7 +82,7 @@ def check_upcoming_matches(app):
                 subject, html = match_1h_email(user.first_name, match_data, lang)
                 try:
                     resend.Emails.send({
-                        'from':    'My World Cup 2026 <onboarding@resend.dev>',
+                        'from':    'My World Cup 2026 <noreply@myfootballworldcup.com>',
                         'to':      [user.email],
                         'subject': subject,
                         'html':    html,
