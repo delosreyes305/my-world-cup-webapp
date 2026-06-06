@@ -22,28 +22,54 @@ NEWS_BASE = 'https://api.thenewsapi.com/v1'
 
 
 def _fetch_wc_articles():
-    """Llama a TheNewsAPI y retorna lista de artículos (dict)."""
+    """Fetch WC 2026 articles published in the last 24 hours only."""
     key = os.getenv('NEWS_API_KEY', '')
     if not key:
-        print('⚠️  [news_notifier] NEWS_API_KEY no configurada.')
+        print('⚠️  [news_notifier] NEWS_API_KEY not configured.')
         return []
     try:
+        since = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%S')
         resp = requests.get(
             f'{NEWS_BASE}/news/all',
             params={
-                'api_token':  key,
-                'search':     'World Cup 2026',
-                'categories': 'sports',
-                'language':   'en',
-                'limit':      '20',
+                'api_token':       key,
+                'search':          'World Cup 2026',
+                'categories':      'sports',
+                'language':        'en',
+                'limit':           '20',
+                'published_after': since,
             },
             timeout=10,
         )
         data = resp.json()
         return data.get('data', [])
     except Exception as exc:
-        print(f'❌ [news_notifier] Error llamando a TheNewsAPI: {exc}')
+        print(f'❌ [news_notifier] Error calling TheNewsAPI: {exc}')
         return []
+
+
+def _already_sent_today(user_id: int) -> bool:
+    """True if daily news digest was already sent to this user today."""
+    today_key = f"digest_{datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+    return SentNotification.query.filter_by(
+        user_id=user_id,
+        notif_type='news_daily',
+        ref_key=today_key,
+    ).first() is not None
+
+
+def _mark_digest_sent(user_id: int):
+    """Mark today's digest as sent for this user."""
+    today_key = f"digest_{datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+    try:
+        db.session.add(SentNotification(
+            user_id=user_id,
+            notif_type='news_daily',
+            ref_key=today_key,
+        ))
+        db.session.flush()
+    except IntegrityError:
+        db.session.rollback()
 
 
 def _article_mentions(article: dict, keywords: list[str]) -> bool:
@@ -85,7 +111,11 @@ def check_news_favorites(app):
             if not user:
                 continue
 
-            # Recopilar nombres de equipos y jugadores favoritos
+            # Skip if digest already sent today
+            if _already_sent_today(user.id):
+                continue
+
+            # Collect keywords: teams, players AND match teams from favorites
             favs = Favorite.query.filter_by(user_id=user.id).all()
             keywords = []
             for fav in favs:
@@ -94,39 +124,30 @@ def check_news_favorites(app):
                     name = data.get('name', '')
                     if name:
                         keywords.append(name)
-                        # Para equipos compuestos (ej. "South Korea") agregar primer token
                         parts = name.split()
                         if len(parts) > 1:
                             keywords.append(parts[0])
+                elif fav.type == 'match':
+                    # Include both team names from the match
+                    for key in ('team1', 'team2'):
+                        tname = data.get(key, '')
+                        if tname:
+                            keywords.append(tname)
+                            parts = tname.split()
+                            if len(parts) > 1:
+                                keywords.append(parts[0])
 
             if not keywords:
-                continue  # usuario sin favoritos relevantes
+                continue
 
-            # Filtrar artículos que mencionan sus favoritos
+            # Filter articles mentioning favorites
             relevant = [a for a in articles if _article_mentions(a, keywords)]
             if not relevant:
                 continue
 
-            # Excluir los ya notificados
-            new_articles = []
-            for art in relevant:
-                ref_key = art.get('uuid') or art.get('url', '')[:200]
-                if not ref_key:
-                    continue
-                if SentNotification.query.filter_by(
-                    user_id=user.id,
-                    notif_type='news',
-                    ref_key=ref_key,
-                ).first():
-                    continue
-                new_articles.append((ref_key, art))
-
-            if not new_articles:
-                continue
-
-            # Armar el digest
+            # Build digest (up to 5 articles)
             articles_payload = []
-            for ref_key, art in new_articles[:5]:
+            for art in relevant[:5]:
                 articles_payload.append({
                     'title':       art.get('title', ''),
                     'description': art.get('description') or art.get('snippet', ''),
@@ -139,24 +160,14 @@ def check_news_favorites(app):
 
             try:
                 resend.Emails.send({
-                    'from':    'My World Cup 2026 <onboarding@resend.dev>',
+                    'from':    'My World Cup 2026 <noreply@myfootballworldcup.com>',
                     'to':      [user.email],
                     'subject': subject,
                     'html':    html,
                 })
 
-                # Marcar todos como enviados
-                for ref_key, _ in new_articles[:5]:
-                    try:
-                        db.session.add(SentNotification(
-                            user_id=user.id,
-                            notif_type='news',
-                            ref_key=ref_key,
-                        ))
-                        db.session.flush()
-                    except IntegrityError:
-                        db.session.rollback()
-
+                # Mark digest as sent for today
+                _mark_digest_sent(user.id)
                 db.session.commit()
                 sent_count += 1
                 print(f'✅ [news_notifier] Digest enviado a {user.email} '
