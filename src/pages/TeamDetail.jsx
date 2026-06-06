@@ -254,43 +254,7 @@ export default function TeamDetail() {
               </div>
             </div>
           </div>
-            {/* Name + badges stacked */}
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
-              <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0, lineHeight: 1.2,
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {team.name}
-              </h1>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {team.confederation && (
-                  <span className="badge" style={{
-                    fontSize: 10, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
-                    background: 'rgba(240,180,41,0.12)', color: 'var(--gold)',
-                    border: '0.5px solid rgba(240,180,41,0.3)',
-                  }}>
-                    {team.confederation}
-                  </span>
-                )}
-                {groupLetter && (
-                  <span className="badge" style={{
-                    fontSize: 10, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
-                    background: 'rgba(55,138,221,0.12)', color: 'var(--electric)',
-                    border: '0.5px solid rgba(55,138,221,0.25)',
-                  }}>
-                    {lang === 'es' ? 'Grupo' : 'Group'} {groupLetter}
-                  </span>
-                )}
-                {rank && (
-                  <span className="badge" style={{
-                    fontSize: 10, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
-                    background: 'rgba(29,158,117,0.1)', color: 'var(--green)',
-                    border: '0.5px solid rgba(29,158,117,0.25)',
-                  }}>
-                    #{rank} FIFA
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+            
 
           {/* Divider */}
           <div style={{ height: '0.5px', background: 'var(--border)', margin: '14px 0' }} />
