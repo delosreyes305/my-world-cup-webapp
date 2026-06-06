@@ -16,8 +16,8 @@ import './Home.css'
 // ── Fallback: WC 2026 inaugural (used when no API fixtures available) ───
 const INAUGURAL_DATE = new Date('2026-06-11T22:00:00Z')
 const INAUGURAL = {
-  team1: 'Mexico', team2: 'Ecuador',
-  group: '', venue: 'Estadio Azteca, Mexico City',
+  team1: 'Mexico', team2: 'South Africa',
+  group: 'A', venue: 'Estadio Azteca, Mexico City',
 }
  
 // ── Countdown hook ────────────────────────────────────
@@ -91,7 +91,7 @@ function DynamicCountdown({ upcoming, lang }) {
   const [idx, setIdx] = useState(0)
  
   // Reset index when the list changes (fresh fixtures loaded)
-const firstMatchId = upcoming[0]?.id ?? null
+  const firstMatchId = upcoming[0]?.id ?? null
   useEffect(() => { setIdx(0) }, [firstMatchId])
  
   const match = upcoming[idx] ?? null
