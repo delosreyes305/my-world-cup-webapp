@@ -51,11 +51,23 @@ function formatGroupHeader(dateStr, lang) {
   )
 }
 
-// Groups an array of matches by their date (YYYY-MM-DD key)
+// Groups an array of matches by their LOCAL date (YYYY-MM-DD key)
+// UTC dates like 2026-06-21T00:00:00Z are Jun 20 in ET — we must convert
+// to the user's local timezone before grouping, not split on 'T' blindly.
+function toLocalDateKey(isoString) {
+  if (!isoString) return 'TBD'
+  const d = new Date(isoString)
+  // Use local year/month/day so timezone offset is applied correctly
+  const y  = d.getFullYear()
+  const mo = String(d.getMonth() + 1).padStart(2, '0')
+  const dy = String(d.getDate()).padStart(2, '0')
+  return `${y}-${mo}-${dy}`
+}
+
 function groupByDate(matches, ascending = true) {
   const map = {}
   matches.forEach(m => {
-    const key = m.date ? m.date.split('T')[0] : 'TBD'
+    const key = m.date ? toLocalDateKey(m.date) : 'TBD'
     if (!map[key]) map[key] = []
     map[key].push(m)
   })
