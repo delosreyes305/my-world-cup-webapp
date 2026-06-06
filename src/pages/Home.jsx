@@ -7,6 +7,7 @@ import { useApi, useApiPolling } from '../hooks/useApi'
 import { getLiveMatches, getStandings, getTopScorers, getTopAssists, getTopYellowCards, getTopRedCards, getTeams, getAllFixtures, TEAM_ISO } from '../services/sportsService'
 import { getNews } from '../services/newsService'
 import { TEAMS, GROUPS } from '../data/mockData'
+import { IS_MOCK } from '../services/sportsService'
 import MatchCard from '../components/common/MatchCard'
 import ApiStatus from '../components/common/ApiStatus'
 import NewsReader from '../components/common/NewsReader'
@@ -229,8 +230,15 @@ function Hero() {
  
 // ── Group standings table ─────────────────────────────
 function GroupTable({ group, groups, lang }) {
-  const teams = (groups || GROUPS)[group]
-  if (!teams) return null
+  // In API mode, never fall back to mock GROUPS — show loading state instead
+  const teams = groups
+    ? groups[group]
+    : IS_MOCK ? GROUPS[group] : null
+  if (!teams) return (
+    <div className="caption" style={{ color: 'var(--text3)', textAlign: 'center', padding: '24px 0' }}>
+      {lang === 'es' ? 'Cargando clasificación...' : 'Loading standings...'}
+    </div>
+  )
   return (
     <div className="table-scroll-wrap">
       <table className="data-table" aria-label={`Group ${group} standings`} style={{ minWidth: 280 }}>
