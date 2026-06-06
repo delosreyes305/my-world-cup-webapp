@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
-import { getTeams, getAllTeamPlayers, getTeamFixtures, getStandings, TEAM_METADATA, TEAM_ISO } from '../services/sportsService'
+import { getTeams, getAllTeamPlayers, getTeamFixtures, getStandings, getCoach, TEAM_METADATA, TEAM_ISO } from '../services/sportsService'
 
 // ─── Sub-components ──────────────────────────────────
 
@@ -78,6 +78,7 @@ export default function TeamDetail() {
   const { data: squad,    loading: squadLoad    } = useApi(getAllTeamPlayers, team?.id, { ttl: 3_600_000, skip: !team })
   const { data: fixtures, loading: fixtureLoad  } = useApi(getTeamFixtures,  team?.id, { ttl: 1_800_000, skip: !team })
   const { data: standings }                        = useApi(getStandings, { ttl: 3_600_000 })
+  const { data: coach,    loading: coachLoad    } = useApi(getCoach, team?.id, { ttl: 3_600_000, skip: !team })
 
   // Find this team's group in the standings object
   const [groupLetter, groupRows] = useMemo(() => {
@@ -171,7 +172,7 @@ export default function TeamDetail() {
 
         {/* Banner */}
         <div style={{
-          height: 35,
+          height: 50,
           background: 'linear-gradient(135deg, #0a1628 0%, #1a2d4a 60%, #0f2040 100%)',
           position: 'relative',
           flexShrink: 0,
@@ -183,17 +184,17 @@ export default function TeamDetail() {
         </div>
 
         <div style={{ padding: '0 16px 16px' }}>
-          {/* Flag + badges row */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12 }}>
-            {/* Flag overlapping banner */}
+          {/* Flag + name + badges */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginTop: 20 }}>
+
+            {/* Flag */}
             {(() => {
               const iso = TEAM_ISO[team.name]
               return (
                 <div style={{
                   width: 90, height: 60, borderRadius: 8,
                   border: '2.5px solid var(--card)',
-                  marginTop: 28, flexShrink: 0,
-                  overflow: 'hidden', background: '#0a1628',
+                  flexShrink: 0, overflow: 'hidden', background: '#0a1628',
                 }}>
                   {iso
                     ? <img
@@ -215,42 +216,43 @@ export default function TeamDetail() {
               )
             })()}
 
-            {/* Badges */}
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', paddingBottom: 2 }}>
-              {team.confederation && (
-                <span className="badge" style={{
-                  fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
-                  background: 'rgba(240,180,41,0.12)', color: 'var(--gold)',
-                  border: '0.5px solid rgba(240,180,41,0.3)',
-                }}>
-                  {team.confederation}
-                </span>
-              )}
-              {groupLetter && (
-                <span className="badge" style={{
-                  fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
-                  background: 'rgba(55,138,221,0.12)', color: 'var(--electric)',
-                  border: '0.5px solid rgba(55,138,221,0.25)',
-                }}>
-                  {lang === 'es' ? 'Grupo' : 'Group'} {groupLetter}
-                </span>
-              )}
-              {rank && (
-                <span className="badge" style={{
-                  fontSize: 11, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
-                  background: 'rgba(29,158,117,0.1)', color: 'var(--green)',
-                  border: '0.5px solid rgba(29,158,117,0.25)',
-                }}>
-                  #{rank} FIFA
-                </span>
-              )}
+            {/* Name + badges stacked */}
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+              <h1 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', margin: 0, lineHeight: 1.2,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {team.name}
+              </h1>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {team.confederation && (
+                  <span className="badge" style={{
+                    fontSize: 10, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
+                    background: 'rgba(240,180,41,0.12)', color: 'var(--gold)',
+                    border: '0.5px solid rgba(240,180,41,0.3)',
+                  }}>
+                    {team.confederation}
+                  </span>
+                )}
+                {groupLetter && (
+                  <span className="badge" style={{
+                    fontSize: 10, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
+                    background: 'rgba(55,138,221,0.12)', color: 'var(--electric)',
+                    border: '0.5px solid rgba(55,138,221,0.25)',
+                  }}>
+                    {lang === 'es' ? 'Grupo' : 'Group'} {groupLetter}
+                  </span>
+                )}
+                {rank && (
+                  <span className="badge" style={{
+                    fontSize: 10, fontWeight: 500, padding: '3px 8px', borderRadius: 20,
+                    background: 'rgba(29,158,117,0.1)', color: 'var(--green)',
+                    border: '0.5px solid rgba(29,158,117,0.25)',
+                  }}>
+                    #{rank} FIFA
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-
-          {/* Name */}
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '10px 0 0' }}>
-            {team.name}
-          </h1>
 
           {/* Divider */}
           <div style={{ height: '0.5px', background: 'var(--border)', margin: '14px 0' }} />
@@ -309,50 +311,102 @@ export default function TeamDetail() {
       {/* ── Info + Matches ── */}
       <div className="grid-2 mb-16">
 
-        {/* Team Info */}
-        <div className="card">
-          <h2 className="fw-600 mb-16" style={{ fontSize: 15 }}>
-            {lang === 'es' ? 'Información del equipo' : 'Team Info'}
-          </h2>
+        {/* Team Info + Coach */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {[
-            { label: lang === 'es' ? 'Confederación'  : 'Confederation', val: team.confederation || '—' },
-            { label: lang === 'es' ? 'Fundado'        : 'Founded',       val: team.founded || '—' },
-            team.coach
-              ? { label: lang === 'es' ? 'Técnico'   : 'Coach',          val: team.coach }
-              : null,
-            team.venue?.name
-              ? { label: lang === 'es' ? 'Estadio'   : 'Home Venue',     val: team.venue.name }
-              : null,
-            team.venue?.city
-              ? { label: lang === 'es' ? 'Ciudad'    : 'City',           val: team.venue.city }
-              : null,
-            team.venue?.capacity
-              ? { label: lang === 'es' ? 'Capacidad' : 'Capacity',       val: Number(team.venue.capacity).toLocaleString() }
-              : null,
-          ].filter(Boolean).map(({ label, val }) => (
-            <div key={label} className="flex-between" style={{ marginBottom: 10 }}>
-              <span className="label" style={{ marginBottom: 0 }}>{label}</span>
-              <span className="fw-600" style={{ maxWidth: '60%', textAlign: 'right' }}>{val}</span>
-            </div>
-          ))}
-
-          {/* Recent Form (mock only — API doesn't return form) */}
-          {team.form?.length > 0 && (
-            <>
-              <div className="divider" />
-              <div className="label mb-8">{lang === 'es' ? 'Forma reciente' : 'Recent Form'}</div>
-              <div className="flex gap-6">
-                {team.form.map((f, i) => (
-                  <div key={i}
-                    className={`form-dot ${f.toLowerCase()}`}
-                    style={{ width: 32, height: 32, fontSize: 12 }}
-                    aria-label={f === 'W' ? 'Win' : f === 'D' ? 'Draw' : 'Loss'}>
-                    {f}
-                  </div>
-                ))}
+          {/* Team Info */}
+          <div className="card">
+            <h2 className="fw-600 mb-16" style={{ fontSize: 15 }}>
+              {lang === 'es' ? 'Información del equipo' : 'Team Info'}
+            </h2>
+            {[
+              { label: lang === 'es' ? 'Confederación' : 'Confederation', val: team.confederation || '—' },
+              { label: lang === 'es' ? 'Fundado'       : 'Founded',       val: team.founded || '—' },
+              team.venue?.name
+                ? { label: lang === 'es' ? 'Estadio'   : 'Home Venue',   val: team.venue.name }
+                : null,
+              team.venue?.city
+                ? { label: lang === 'es' ? 'Ciudad'    : 'City',         val: team.venue.city }
+                : null,
+              team.venue?.capacity
+                ? { label: lang === 'es' ? 'Capacidad' : 'Capacity',     val: Number(team.venue.capacity).toLocaleString() }
+                : null,
+            ].filter(Boolean).map(({ label, val }) => (
+              <div key={label} className="flex-between" style={{ marginBottom: 10 }}>
+                <span className="label" style={{ marginBottom: 0 }}>{label}</span>
+                <span className="fw-600" style={{ maxWidth: '60%', textAlign: 'right' }}>{val}</span>
               </div>
-            </>
+            ))}
+          </div>
+
+          {/* Coach Card */}
+          {coachLoad && (
+            <div className="card">
+              <div className="skeleton" style={{ height: 80, borderRadius: 8 }} />
+            </div>
+          )}
+          {!coachLoad && coach && (
+            <div className="card">
+              <h2 className="fw-600 mb-12" style={{ fontSize: 15 }}>
+                {lang === 'es' ? 'Técnico' : 'Head Coach'}
+              </h2>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 14 }}>
+                {/* Photo */}
+                <div style={{
+                  width: 64, height: 64, borderRadius: 8, flexShrink: 0,
+                  overflow: 'hidden', background: 'var(--card2)',
+                  border: '1.5px solid var(--border)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {coach.photo
+                    ? <img src={coach.photo} alt={coach.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={e => { e.target.style.display = 'none' }}
+                      />
+                    : <span style={{ fontSize: 28 }}>👨‍💼</span>
+                  }
+                </div>
+                {/* Name + meta */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="fw-600" style={{ fontSize: 15, marginBottom: 3 }}>{coach.name}</div>
+                  <div className="caption" style={{ color: 'var(--text3)', fontSize: 11 }}>
+                    {[coach.nationality, coach.age ? `${coach.age} ${lang === 'es' ? 'años' : 'yrs'}` : null]
+                      .filter(Boolean).join(' · ')}
+                  </div>
+                  {coach.birth?.place && (
+                    <div className="caption" style={{ color: 'var(--text3)', fontSize: 11, marginTop: 2 }}>
+                      📍 {coach.birth.place}{coach.birth.country ? `, ${coach.birth.country}` : ''}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Career */}
+              {coach.career?.length > 0 && (
+                <>
+                  <div style={{ height: '0.5px', background: 'var(--border)', margin: '0 0 10px' }} />
+                  <div className="label mb-8" style={{ fontSize: 10 }}>
+                    {lang === 'es' ? 'Carrera' : 'Career'}
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {coach.career.slice(0, 5).map((c, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {c.logo && (
+                          <img src={c.logo} alt={c.team}
+                            style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0 }}
+                            onError={e => { e.target.style.display = 'none' }}
+                          />
+                        )}
+                        <span style={{ fontSize: 12, flex: 1, color: 'var(--text)' }}>{c.team}</span>
+                        <span className="caption" style={{ fontSize: 10, color: 'var(--text3)', flexShrink: 0 }}>
+                          {c.start?.slice(0,4)}{c.end ? `–${c.end.slice(0,4)}` : '–present'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
 
