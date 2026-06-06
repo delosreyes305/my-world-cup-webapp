@@ -533,13 +533,9 @@ export async function getTopScorers() {
     { headers }
   )
   // 🔍 DEBUG — borrar después
-  console.log('[topscorers] results:', topData.results, '| errors:', topData.errors)
-  console.log('[topscorers] response[0]:', topData.response?.[0]?.player?.name)
 
   const topScorers = (topData.response || []).map(normalizePlayer)
   if (topScorers.length > 5) return topScorers
-
-  console.log('[topscorers] → usando fallback _fetchPriorityPlayers')
   return _fetchPriorityPlayers()
 }
 
