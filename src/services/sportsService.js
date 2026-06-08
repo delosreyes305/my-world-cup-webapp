@@ -182,61 +182,61 @@ export async function getStandings() {
  * Keyed by the exact team name returned by the API.
  */
 export const TEAM_METADATA = {
-  // Official FIFA Rankings — April 1, 2026 update
+  // Official FIFA Rankings — June 8, 2026 (based on April 1, 2026 official update)
   // ── UEFA ──────────────────────────────────────────────
-  France:                 { rank:  1, titles: 2 }, // 1998, 2018
-  Spain:                  { rank:  2, titles: 1 }, // 2010
-  England:                { rank:  4, titles: 1 }, // 1966
+  France:                 { rank:  3, titles: 2 },
+  Spain:                  { rank:  2, titles: 1 },
+  England:                { rank:  4, titles: 1 },
   Portugal:               { rank:  5, titles: 0 },
-  Netherlands:            { rank:  7, titles: 0 },
+  Netherlands:            { rank:  8, titles: 0 },
   Belgium:                { rank:  9, titles: 0 },
-  Germany:                { rank: 10, titles: 4 }, // 1954, 1974, 1990, 2014
+  Germany:                { rank: 10, titles: 4 },
   Croatia:                { rank: 11, titles: 0 },
   Switzerland:            { rank: 19, titles: 0 },
-  Austria:                { rank: 23, titles: 0 },
-  Sweden:                 { rank: 39, titles: 0 },
-  'Czech Republic':       { rank: 41, titles: 0 },
-  'Türkiye':              { rank: 42, titles: 0 },
-  Norway:                 { rank: 44, titles: 0 },
-  Scotland:               { rank: 47, titles: 0 },
-  'Bosnia & Herzegovina': { rank: 52, titles: 0 },
+  Austria:                { rank: 24, titles: 0 },
+  Sweden:                 { rank: 38, titles: 0 },
+  'Czech Republic':       { rank: 39, titles: 0 },
+  'Türkiye':              { rank: 22, titles: 0 },
+  Norway:                 { rank: 31, titles: 0 },
+  Scotland:               { rank: 42, titles: 0 },
+  'Bosnia & Herzegovina': { rank: 64, titles: 0 },
   // ── CONMEBOL ──────────────────────────────────────────
-  Argentina:              { rank:  3, titles: 3 }, // 1978, 1986, 2022
-  Brazil:                 { rank:  6, titles: 5 }, // 1958, 1962, 1970, 1994, 2002
+  Argentina:              { rank:  1, titles: 3 },
+  Brazil:                 { rank:  6, titles: 5 },
   Colombia:               { rank: 13, titles: 0 },
-  Uruguay:                { rank: 17, titles: 2 }, // 1930, 1950
-  Ecuador:                { rank: 24, titles: 0 },
-  Paraguay:               { rank: 64, titles: 0 },
+  Uruguay:                { rank: 16, titles: 2 },
+  Ecuador:                { rank: 23, titles: 0 },
+  Paraguay:               { rank: 40, titles: 0 },
   // ── CONCACAF ──────────────────────────────────────────
-  USA:                    { rank: 16, titles: 0 },
-  Mexico:                 { rank: 15, titles: 0 },
+  USA:                    { rank: 17, titles: 0 },
+  Mexico:                 { rank: 14, titles: 0 },
   Canada:                 { rank: 30, titles: 0 },
-  Panama:                 { rank: 53, titles: 0 },
-  'Curaçao':              { rank: 81, titles: 0 },
+  Panama:                 { rank: 34, titles: 0 },
+  'Curaçao':              { rank: 82, titles: 0 },
   Haiti:                  { rank: 83, titles: 0 },
   // ── CAF ───────────────────────────────────────────────
-  Morocco:                { rank:  8, titles: 0 },
-  Senegal:                { rank: 14, titles: 0 },
-  Algeria:                { rank: 36, titles: 0 },
+  Morocco:                { rank:  7, titles: 0 },
+  Senegal:                { rank: 15, titles: 0 },
+  Algeria:                { rank: 28, titles: 0 },
   Egypt:                  { rank: 29, titles: 0 },
   'Ivory Coast':          { rank: 33, titles: 0 },
-  Tunisia:                { rank: 40, titles: 0 },
-  'DR Congo':             { rank: 51, titles: 0 },
-  'Cape Verde':           { rank: 70, titles: 0 },
-  Ghana:                  { rank: 65, titles: 0 },
+  Tunisia:                { rank: 46, titles: 0 },
+  'DR Congo':             { rank: 45, titles: 0 },
+  'Cape Verde':           { rank: 67, titles: 0 },
+  Ghana:                  { rank: 73, titles: 0 },
   'South Africa':         { rank: 60, titles: 0 },
   // ── AFC ───────────────────────────────────────────────
   Japan:                  { rank: 18, titles: 0 },
   Iran:                   { rank: 21, titles: 0 },
   'South Korea':          { rank: 25, titles: 0 },
-  Australia:              { rank: 26, titles: 0 },
-  Qatar:                  { rank: 35, titles: 0 },
-  'Saudi Arabia':         { rank: 57, titles: 0 },
-  Iraq:                   { rank: 61, titles: 0 },
-  Uzbekistan:             { rank: 62, titles: 0 },
-  Jordan:                 { rank: 68, titles: 0 },
+  Australia:              { rank: 27, titles: 0 },
+  Qatar:                  { rank: 57, titles: 0 },
+  'Saudi Arabia':         { rank: 61, titles: 0 },
+  Iraq:                   { rank: 56, titles: 0 },
+  Uzbekistan:             { rank: 50, titles: 0 },
+  Jordan:                 { rank: 63, titles: 0 },
   // ── OFC ───────────────────────────────────────────────
-  'New Zealand':          { rank: 95, titles: 0 },
+  'New Zealand':          { rank: 85, titles: 0 },
 }
 
 /** ISO 3166-1 alpha-2 codes for flagcdn.com — keys match TEAM_METADATA */
