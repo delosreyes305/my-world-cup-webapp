@@ -143,6 +143,14 @@ export default defineConfig({
         target:       'http://localhost:5000',
         changeOrigin: true,
       },
+      '/api/notifications': {
+        target:       'http://localhost:5000',
+        changeOrigin: true,
+      },
+      '/api/quiniela': {
+        target:       'http://localhost:5000',
+        changeOrigin: true,
+      },
     },
   },
   build: { outDir: 'dist' },

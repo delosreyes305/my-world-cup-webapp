@@ -17,6 +17,10 @@
       "destination": "https://my-world-cup-webapp-production.up.railway.app/api/notifications/:path*"
     },
     {
+      "source": "/api/quiniela/:path*",
+      "destination": "https://my-world-cup-webapp-production.up.railway.app/api/quiniela/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

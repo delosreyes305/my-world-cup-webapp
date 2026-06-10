@@ -23,6 +23,7 @@ import AccountPage from './pages/AccountPage'
 import ResetPassword from './pages/ResetPassword'
 import AboutPage from './pages/AboutPage'
 import NotFound from './pages/NotFound'
+import Quiniela from './pages/Quiniela'
 
 export default function App() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
                 <Route path="account" element={<AccountPage />} />
                 <Route path="reset-password" element={<ResetPassword />} />
                 <Route path="about" element={<AboutPage />} />
+                <Route path="quiniela" element={<Quiniela />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>

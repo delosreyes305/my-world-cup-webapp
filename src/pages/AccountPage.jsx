@@ -522,6 +522,117 @@ function FavoritesTab({ favorites, navigate, lang, t }) {
 }
 
 // ── Página principal ─────────────────────────────────────────────────
+
+// ── Delete Account ────────────────────────────────────────────────────
+function DeleteAccountSection({ token, lang, es, logout }) {
+  const [open,     setOpen]     = useState(false)
+  const [confirm,  setConfirm]  = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [error,    setError]    = useState('')
+
+  const CONFIRM_WORD = es ? 'ELIMINAR' : 'DELETE'
+
+  const handleDelete = async () => {
+    if (confirm !== CONFIRM_WORD) {
+      return setError(es ? `Escribe ${CONFIRM_WORD} para confirmar` : `Type ${CONFIRM_WORD} to confirm`)
+    }
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/auth/account', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error('Error')
+      logout()
+    } catch {
+      setError(es ? 'Error al eliminar la cuenta. Intenta de nuevo.' : 'Error deleting account. Please try again.')
+      setDeleting(false)
+    }
+  }
+
+if (!open) return (
+  <div className="card mt-16" style={{ borderColor: 'rgba(239,68,68,0.2)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+          background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <i className="fa-solid fa-triangle-exclamation" style={{ color: 'var(--red)', fontSize: 15 }} />
+        </div>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+            {es ? 'Zona de peligro' : 'Danger zone'}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+            {es ? 'Esta acción es irreversible.' : 'This action cannot be undone.'}
+          </div>
+        </div>
+      </div>
+      <button
+        className="btn btn-sm"
+        style={{
+          width: '100%', color: 'var(--red)',
+          borderColor: 'rgba(239,68,68,0.4)',
+          background: 'rgba(239,68,68,0.06)',
+        }}
+        onClick={() => setOpen(true)}
+      >
+        <i className="fa-solid fa-trash" style={{ marginRight: 6 }} />
+        {es ? 'Eliminar cuenta' : 'Delete account'}
+      </button>
+    </div>
+  </div>
+)
+
+  return (
+    <div className="card mt-16" style={{ border: '1px solid rgba(239,68,68,0.4)', background: 'rgba(239,68,68,0.04)' }}>
+      <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--red)', marginBottom: 8 }}>
+        <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: 8 }} />
+        {es ? 'Eliminar cuenta permanentemente' : 'Permanently delete account'}
+      </h3>
+      <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.6, marginBottom: 14 }}>
+        {es
+          ? 'Se eliminarán todos tus datos: favoritos, predicciones, ligas y perfil de quiniela. Esta acción no se puede deshacer.'
+          : 'All your data will be deleted: favorites, predictions, leagues and quiniela profile. This cannot be undone.'}
+      </p>
+      <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>
+        {es ? `Escribe "${CONFIRM_WORD}" para confirmar:` : `Type "${CONFIRM_WORD}" to confirm:`}
+      </p>
+      <input
+        type="text"
+        value={confirm}
+        onChange={e => setConfirm(e.target.value)}
+        placeholder={CONFIRM_WORD}
+        style={{
+          width: '100%', padding: '9px 12px', borderRadius: 8, marginBottom: 12,
+          background: 'var(--card2)', border: '1px solid rgba(239,68,68,0.4)',
+          color: 'var(--text)', fontSize: 14, fontWeight: 700, letterSpacing: 1,
+          boxSizing: 'border-box',
+        }}
+      />
+      {error && <p style={{ color: 'var(--red)', fontSize: 12, marginBottom: 10 }}>{error}</p>}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button
+          className="btn btn-sm"
+          style={{ flex: 1, background: 'rgba(239,68,68,0.15)', color: 'var(--red)',
+                   border: '1px solid rgba(239,68,68,0.4)', fontWeight: 700 }}
+          onClick={handleDelete}
+          disabled={deleting}
+        >
+          {deleting
+            ? <i className="fa-solid fa-spinner fa-spin" />
+            : (es ? 'Eliminar cuenta' : 'Delete account')}
+        </button>
+        <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => { setOpen(false); setConfirm(''); setError('') }}>
+          {es ? 'Cancelar' : 'Cancel'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function AccountPage() {
   const { user, authLoading, logout, token, updateUser } = useAuth()
   const { favorites }   = useApp()
@@ -637,6 +748,9 @@ export default function AccountPage() {
           ☕ {es ? 'Invítame un café' : 'Buy me a coffee'}
         </a>
       </div>
+
+      {/* ── Delete account ── */}
+      <DeleteAccountSection token={token} lang={lang} es={es} logout={logout} />
 
     </div>
   )

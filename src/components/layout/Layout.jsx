@@ -17,15 +17,15 @@ const NAV_ITEMS = [
   { path: '/matches',   key: 'matches',   icon: <i className="fa-solid fa-futbol"         aria-hidden="true" /> },
   { path: '/teams',     key: 'teams',     icon: <i className="fa-solid fa-shield-halved"  aria-hidden="true" /> },
   { path: '/players',   key: 'players',   icon: <i className="fa-solid fa-users"          aria-hidden="true" /> },
-  { path: '/bracket',   key: 'bracket',   icon: <i className="fa-solid fa-trophy"         aria-hidden="true" /> },
+  { path: '/bracket',   key: 'bracket',   icon: <i className="fa-solid fa-sitemap"        aria-hidden="true" /> },
   { path: '/news',      key: 'news',      icon: <i className="fa-solid fa-newspaper"      aria-hidden="true" /> },
+  { path: '/quiniela',  key: 'quiniela',  icon: <i className="fa-solid fa-trophy"         aria-hidden="true" /> },
   { path: '/ranking',   key: 'ranking',   icon: <i className="fa-solid fa-ranking-star"   aria-hidden="true" /> },
   { path: '/trivia',    key: 'trivia',    icon: <i className="fa-solid fa-brain"          aria-hidden="true" /> },
   { path: '/predict',   key: 'predict',   icon: <i className="fa-solid fa-robot"          aria-hidden="true" /> },
   { path: '/favorites', key: 'favorites', icon: <i className="fa-solid fa-heart"          aria-hidden="true" /> },
   { path: '/about',     key: 'about',     icon: <i className="fa-solid fa-circle-info"    aria-hidden="true" /> },
 ]
-
 // ── Menú desplegable del usuario ─────────────────────────────────────
 function UserMenu() {
   const { user, authLoading, logout, openAuthModal } = useAuth()
@@ -112,6 +112,16 @@ function UserMenu() {
           >
             <i className="fa-solid fa-heart" aria-hidden="true" />
             {lang === 'es' ? 'Favoritos' : 'Favorites'}
+          </button>
+
+          {/* Quiniela */}
+          <button
+            className="user-dropdown-item"
+            onClick={() => go('/quiniela')}
+            role="menuitem"
+          >
+            <i className="fa-solid fa-trophy" aria-hidden="true" />
+            Quiniela
           </button>
 
           {/* About */}
