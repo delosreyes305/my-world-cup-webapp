@@ -250,3 +250,34 @@ def reset_password():
     db.session.commit()
 
     return jsonify({'message': 'Contraseña actualizada. Ya puedes iniciar sesión.'}), 200
+
+
+# ── DELETE /api/auth/account ─────────────────────────────────────────
+@auth_bp.route('/account', methods=['DELETE'])
+@jwt_required()
+def delete_account():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    try:
+        # Delete in order to avoid FK constraint errors
+        from models import (Prediction, PredictionScore, QuinielaProfile,
+                           LeagueMember, PrivateLeague, SentNotification,
+                           NotificationPref, Favorite, PasswordResetToken)
+
+        PredictionScore.query.filter_by(user_id=user_id).delete()
+        Prediction.query.filter_by(user_id=user_id).delete()
+        LeagueMember.query.filter_by(user_id=user_id).delete()
+        PrivateLeague.query.filter_by(owner_id=user_id).delete()
+        QuinielaProfile.query.filter_by(user_id=user_id).delete()
+        SentNotification.query.filter_by(user_id=user_id).delete()
+        NotificationPref.query.filter_by(user_id=user_id).delete()
+        Favorite.query.filter_by(user_id=user_id).delete()
+        PasswordResetToken.query.filter_by(user_id=user_id).delete()
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({'message': 'Account deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error deleting account: {str(e)}'}), 500

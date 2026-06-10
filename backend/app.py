@@ -80,10 +80,12 @@ def create_app():
     from routes.auth          import auth_bp
     from routes.favorites     import favorites_bp
     from routes.notifications import notifications_bp
+    from routes.quiniela      import quiniela_bp
 
     app.register_blueprint(auth_bp,           url_prefix='/api/auth')
     app.register_blueprint(favorites_bp,      url_prefix='/api/favorites')
     app.register_blueprint(notifications_bp,  url_prefix='/api/notifications')
+    app.register_blueprint(quiniela_bp,       url_prefix='/api/quiniela')
 
     # ── Crear tablas ──────────────────────────────────────────────────
     with app.app_context():
@@ -99,8 +101,10 @@ app = create_app()
 # Se inicia solo en el proceso principal (evita duplicados con el
 # reloader de Werkzeug en modo debug).
 if os.environ.get('WERKZEUG_RUN_MAIN') != 'false':
-    from jobs.match_notifier import check_upcoming_matches
-    from jobs.news_notifier  import check_news_favorites
+    from jobs.match_notifier   import check_upcoming_matches
+    from jobs.news_notifier    import check_news_favorites
+    from jobs.score_calculator  import calculate_scores
+    from jobs.champion_calculator import calculate_champions
 
     _scheduler = BackgroundScheduler(daemon=True)
     _scheduler.add_job(
@@ -113,9 +117,18 @@ if os.environ.get('WERKZEUG_RUN_MAIN') != 'false':
         trigger='interval', hours=3,
         id='news_notifier', replace_existing=True,
     )
+    _scheduler.add_job(
+        lambda: calculate_scores(app),
+        trigger='interval', minutes=15,
+        id='score_calculator', replace_existing=True,
+    )
+    _scheduler.add_job(
+        lambda: calculate_champions(app),
+        trigger='interval', minutes=15,
+        id='champion_calculator', replace_existing=True,
+    )
     _scheduler.start()
-    print('Scheduler de notificaciones iniciado '
-          '(partidos cada 15 min · noticias cada 3 h)')
+    print('Scheduler iniciado (partidos · noticias · quiniela cada 15 min)')
 
 if __name__ == '__main__':
     # Use Railway's PORT variable first, fall back to FLASK_PORT, then 5000
