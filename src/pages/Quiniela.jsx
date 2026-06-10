@@ -1124,8 +1124,61 @@ export default function Quiniela() {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'predict' && (
-        <PredictTab
+{activeTab === 'predict' && (
+  <div className="card mb-16" style={{
+    background: 'linear-gradient(135deg, rgba(240,180,41,0.06), rgba(240,180,41,0.02))',
+    border: '1px solid rgba(240,180,41,0.15)',
+  }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+      <i className="fa-solid fa-circle-info" style={{ color: 'var(--gold)', fontSize: 16 }} />
+      <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, color: 'var(--text)' }}>
+        {lang === 'es' ? '¿Cómo funciona la quiniela?' : 'How does the quiniela work?'}
+      </h3>
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {[
+        {
+          icon: 'fa-pen-to-square',
+          text: lang === 'es'
+            ? 'Predice el marcador exacto de cada partido antes de que empiece.'
+            : 'Predict the exact score of each match before it starts.',
+        },
+        {
+          icon: 'fa-lock',
+          text: lang === 'es'
+            ? 'Una vez que el partido inicia, tu predicción se bloquea y no puede modificarse.'
+            : 'Once the match starts, your prediction is locked and cannot be changed.',
+        },
+        {
+          icon: 'fa-trophy',
+          text: lang === 'es'
+            ? 'Ganador o empate correcto = 3 pts. Marcador exacto = 5 pts.'
+            : 'Correct winner or draw = 3 pts. Exact score = 5 pts.',
+        },
+        {
+          icon: 'fa-crown',
+          text: lang === 'es'
+            ? 'Se premiará al campeón de fase de grupos, al de eliminatorias y al campeón general.'
+            : 'Champions will be awarded for group stage, knockout phase and overall.',
+        },
+        {
+          icon: 'fa-users',
+          text: lang === 'es'
+            ? 'Crea ligas privadas con amigos usando un código de invitación.'
+            : 'Create private leagues with friends using an invite code.',
+        },
+      ].map(({ icon, text }) => (
+        <div key={icon} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <i className={`fa-solid ${icon}`} style={{ color: 'var(--gold)', fontSize: 13, marginTop: 2, flexShrink: 0, width: 16, textAlign: 'center' }} />
+          <span style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.5 }}>{text}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+{activeTab === 'predict' && (
+  <PredictTab
           token={token}
           lang={lang}
           predictions={predictions}
