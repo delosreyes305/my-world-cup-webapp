@@ -42,11 +42,22 @@ async function callClaude({ prompt, system, max_tokens = 650 }) {
 function mockPrediction(team1, team2) {
   const favoured = (team1.rank || 99) <= (team2.rank || 99) ? team1 : team2
   const underdog  = favoured.id === team1.id ? team2 : team1
+
+  // Pick a varied, semi-random scoreline so it's not always 2-1
+  const SCORELINES = [
+    [1, 0], [2, 0], [2, 1], [3, 1], [1, 1], [3, 2], [4, 1], [0, 0], [2, 2],
+  ]
+  const [hi, lo] = SCORELINES[Math.floor(Math.random() * SCORELINES.length)]
+  const isDraw   = hi === lo
+  const score    = isDraw
+    ? `${favoured.name} ${hi}-${lo} ${underdog.name}`
+    : `${favoured.name} ${hi}-${lo} ${underdog.name}`
+
   return {
     _isMock: true,
-    score:   `${favoured.name} 2-1 ${underdog.name}`,
-    winner:  favoured.name,
-    confidence: 65,
+    score,
+    winner:  isDraw ? 'Draw' : favoured.name,
+    confidence: isDraw ? 50 : 60 + Math.floor(Math.random() * 20),
     team1_strengths: ['Experienced squad', 'Strong defensive block', 'Set-piece quality'],
     team2_strengths: ['Pace on the counter', 'High pressing system', 'Technical midfield'],
     key_player_1: `${team1.name} Captain`,
@@ -71,10 +82,12 @@ export async function getMatchPredictionAI(team1, team2, lang = 'en') {
 ${t1info}
 ${t2info}
 
-Responde ÚNICAMENTE con JSON válido (sin texto extra ni markdown), usando esta estructura exacta:
+IMPORTANTE sobre el marcador: evita por defecto "2-1". Elige UN marcador realista entre esta variedad según el análisis táctico (no los repitas siempre, varía según el partido): 1-0, 0-0, 1-1, 2-0, 0-1, 2-2, 3-1, 1-3, 3-0, 4-1, 2-3, 0-2. El marcador debe reflejar la diferencia de nivel entre los equipos: si son parejos, considera empate o resultado ajustado; si hay gran diferencia de ranking, considera un resultado más amplio.
+
+Responde ÚNICAMENTE con JSON válido (sin texto extra ni markdown), usando esta estructura exacta (los valores son solo ejemplos de formato, NO los uses literalmente):
 {
-  "score": "${team1.name} 2-1 ${team2.name}",
-  "winner": "nombre del equipo ganador",
+  "score": "${team1.name} X-Y ${team2.name}",
+  "winner": "nombre del equipo ganador o Draw/Empate si X=Y",
   "confidence": 70,
   "team1_strengths": ["fortaleza 1", "fortaleza 2", "fortaleza 3"],
   "team2_strengths": ["fortaleza 1", "fortaleza 2", "fortaleza 3"],
@@ -87,10 +100,12 @@ Responde ÚNICAMENTE con JSON válido (sin texto extra ni markdown), usando esta
 ${t1info}
 ${t2info}
 
-Reply ONLY with valid JSON (no extra text, no markdown), using this exact structure:
+IMPORTANT about the score: avoid defaulting to "2-1". Pick ONE realistic scoreline from this variety based on your tactical analysis (don't always repeat the same one — vary it per matchup): 1-0, 0-0, 1-1, 2-0, 0-1, 2-2, 3-1, 1-3, 3-0, 4-1, 2-3, 0-2. The score should reflect the gap between the teams: if they're evenly matched, consider a draw or tight result; if there's a big ranking gap, consider a more decisive result.
+
+Reply ONLY with valid JSON (no extra text, no markdown), using this exact structure (the values shown are placeholders for FORMAT only, do NOT use them literally):
 {
-  "score": "${team1.name} 2-1 ${team2.name}",
-  "winner": "winning team name",
+  "score": "${team1.name} X-Y ${team2.name}",
+  "winner": "winning team name, or Draw if X equals Y",
   "confidence": 70,
   "team1_strengths": ["strength 1", "strength 2", "strength 3"],
   "team2_strengths": ["strength 1", "strength 2", "strength 3"],
