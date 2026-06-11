@@ -71,10 +71,12 @@ export async function getMatchPredictionAI(team1, team2, lang = 'en') {
 ${t1info}
 ${t2info}
 
-Responde ÚNICAMENTE con JSON válido (sin texto extra ni markdown), usando esta estructura exacta:
+Inventa un marcador realista y variado (no siempre 2-1) basado en las fortalezas de cada equipo — puede ser ajustado (1-0, 2-2, 3-1, 0-0, etc.) según el análisis táctico.
+
+Responde ÚNICAMENTE con JSON válido (sin texto extra ni markdown), usando esta estructura exacta (los valores son solo ejemplos de formato, NO los uses literalmente):
 {
-  "score": "${team1.name} 2-1 ${team2.name}",
-  "winner": "nombre del equipo ganador",
+  "score": "${team1.name} X-Y ${team2.name}",
+  "winner": "nombre del equipo ganador o Draw/Empate si X=Y",
   "confidence": 70,
   "team1_strengths": ["fortaleza 1", "fortaleza 2", "fortaleza 3"],
   "team2_strengths": ["fortaleza 1", "fortaleza 2", "fortaleza 3"],
@@ -87,10 +89,12 @@ Responde ÚNICAMENTE con JSON válido (sin texto extra ni markdown), usando esta
 ${t1info}
 ${t2info}
 
-Reply ONLY with valid JSON (no extra text, no markdown), using this exact structure:
+Come up with a realistic, varied scoreline (do NOT default to 2-1 every time) based on each team's strengths — it could be tight (1-0, 2-2, 0-0), or decisive (3-1, 4-0), depending on your tactical analysis.
+
+Reply ONLY with valid JSON (no extra text, no markdown), using this exact structure (the values shown are placeholders for FORMAT only, do NOT use them literally):
 {
-  "score": "${team1.name} 2-1 ${team2.name}",
-  "winner": "winning team name",
+  "score": "${team1.name} X-Y ${team2.name}",
+  "winner": "winning team name, or Draw if X equals Y",
   "confidence": 70,
   "team1_strengths": ["strength 1", "strength 2", "strength 3"],
   "team2_strengths": ["strength 1", "strength 2", "strength 3"],
