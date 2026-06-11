@@ -52,15 +52,19 @@ export default function MatchCard({ match }) {
       aria-label={`${team1} vs ${team2}${group ? `, ${group}` : ''}`}
     >
       <div className="match-card-meta">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, flex: 1, minWidth: 0 }}>
           <span className="badge badge-gold">{group || '—'}</span>
           {(venue || stadium) && (
-            <span style={{ fontSize: 10, color: 'var(--text3)' }}>
+            <span style={{
+              fontSize: 10, color: 'var(--text3)',
+              maxWidth: '100%', overflow: 'hidden',
+              textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
               {[venue, stadium].filter(Boolean).join(' · ')}
             </span>
           )}
         </div>
-        {statusEl}
+        <div style={{ flexShrink: 0, marginLeft: 8 }}>{statusEl}</div>
       </div>
 
       <div className="match-teams">

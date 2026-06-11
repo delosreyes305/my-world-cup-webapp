@@ -4,22 +4,40 @@ import { getLiveMatches, getAllFixtures, getMatchEvents, TEAM_ISO } from '../../
 import { useLang } from '../../context/LangContext'
 
 // Map raw event type/detail → short label (null = skip this event)
-function eventLabel(e) {
+function eventLabel(e, lang = 'en') {
   const type   = (e.type   || '').toLowerCase()
   const detail = (e.detail || '').toLowerCase()
   if (type === 'goal') {
-    if (detail.includes('own'))     return 'OG'
-    if (detail.includes('penalty')) return 'PEN'
-    return 'GOAL'
+    if (detail.includes('own'))     return lang === 'es' ? 'AUTOGOL' : 'OWN GOAL'
+    if (detail.includes('penalty')) return lang === 'es' ? 'GOL DE PENAL' : 'PENALTY GOAL'
+    return lang === 'es' ? 'GOL' : 'GOAL'
   }
   if (type === 'card') {
-    if (detail.includes('red'))    return 'RED CARD'
-    if (detail.includes('yellow')) return 'YELLOW CARD'
+    if (detail.includes('red'))    return lang === 'es' ? 'TARJETA ROJA'    : 'RED CARD'
+    if (detail.includes('yellow')) return lang === 'es' ? 'TARJETA AMARILLA' : 'YELLOW CARD'
     return null
   }
-  if (type === 'subst') return 'SUB'
+  if (type === 'subst') return lang === 'es' ? 'CAMBIO' : 'SUBSTITUTION'
   if (type === 'var')   return 'VAR'
   return null
+}
+
+// Map raw event type/detail → { icon, color } for display
+function eventIcon(e) {
+  const type   = (e.type   || '').toLowerCase()
+  const detail = (e.detail || '').toLowerCase()
+  if (type === 'goal') {
+    if (detail.includes('own')) return { icon: 'fa-solid fa-futbol',          color: 'var(--red)' }
+    return { icon: 'fa-solid fa-futbol', color: 'var(--green)' }
+  }
+  if (type === 'card') {
+    if (detail.includes('red'))    return { icon: 'card', color: 'var(--red)' }
+    if (detail.includes('yellow')) return { icon: 'card', color: '#f0b429' }
+    return { icon: 'card', color: 'var(--text3)' }
+  }
+  if (type === 'subst') return { icon: 'fa-solid fa-arrow-right-arrow-left', color: 'var(--electric)' }
+  if (type === 'var')   return { icon: 'fa-solid fa-tv',                     color: 'var(--text3)' }
+  return { icon: 'fa-solid fa-circle-dot', color: 'var(--red)' }
 }
 
 // Small flag image from flagcdn.com
@@ -69,17 +87,20 @@ export default function LiveTicker() {
       const items = []
       results.forEach(({ m, evts }) => {
         const score = `${m.team1} ${m.score1 ?? 0}–${m.score2 ?? 0} ${m.team2}`
-        const notable = evts.filter(e => eventLabel(e))
+        const notable = evts.filter(e => eventLabel(e, lang))
 
         if (notable.length) {
           notable.forEach(e => {
-            const label = eventLabel(e)
-            const who   = [e.player, e.team ? `(${e.team})` : null, e.time].filter(Boolean).join(' ')
-            items.push(`${label}  ${who}  —  ${score}`)
+            const label = eventLabel(e, lang)
+            const { icon, color } = eventIcon(e)
+            const who = [e.player, e.time].filter(Boolean).join(' · ')
+            items.push({ icon, color, label, who, team: e.team, score })
           })
         } else {
-          const elapsed = m.time ? `${m.time}` : ''
-          items.push(`${score}${elapsed ? `  ${elapsed}` : ''}`)
+          items.push({
+            icon: 'fa-solid fa-circle-dot', color: 'var(--red)',
+            label: null, who: m.time || '', team: null, score,
+          })
         }
       })
 
@@ -90,21 +111,24 @@ export default function LiveTicker() {
   }, [hasLive, liveMatches])
 
   // ── Build ticker content ─────────────────────────────
-  const { liveText, upcomingItems, isLive, label, duration } = useMemo(() => {
-    // LIVE mode — plain text (unchanged)
+  const { liveItems, upcomingItems, isLive, label, duration } = useMemo(() => {
+    // LIVE mode — items with icons
     if (hasLive) {
       const items = eventItems.length
         ? eventItems
-        : (liveMatches || []).map(m =>
-            `${m.team1} ${m.score1 ?? 0}–${m.score2 ?? 0} ${m.team2}  ${m.time ?? ''}`
-          )
-      const text = items.join('  |  ')
+        : (liveMatches || []).map(m => ({
+            icon: 'fa-solid fa-circle-dot', color: 'var(--red)',
+            label: null, who: m.time || '',
+            score: `${m.team1} ${m.score1 ?? 0}–${m.score2 ?? 0} ${m.team2}`,
+          }))
+      const approxLen = items.reduce((acc, it) =>
+        acc + (it.label?.length || 0) + (it.who?.length || 0) + it.score.length + 8, 0)
       return {
-        liveText: text,
+        liveItems: items,
         upcomingItems: [],
         isLive: true,
         label: lang === 'es' ? 'EN VIVO' : 'LIVE',
-        duration: Math.max(18, Math.round(text.length / 6)),
+        duration: Math.max(18, Math.round(approxLen / 6)),
       }
     }
 
@@ -119,7 +143,7 @@ export default function LiveTicker() {
       })
       .slice(0, 8)
 
-    if (!upcoming.length) return { liveText: '', upcomingItems: [], isLive: false, label: '', duration: 20 }
+    if (!upcoming.length) return { liveItems: [], upcomingItems: [], isLive: false, label: '', duration: 20 }
 
     const items = upcoming.map(m => {
       const parts = []
@@ -135,7 +159,7 @@ export default function LiveTicker() {
     })
 
     return {
-      liveText: '',
+      liveItems: [],
       upcomingItems: items,
       isLive: false,
       label: lang === 'es' ? 'PRÓXIMOS' : 'UPCOMING',
@@ -143,8 +167,30 @@ export default function LiveTicker() {
     }
   }, [hasLive, eventItems, liveMatches, allFixtures, lang])
 
-  const hasContent = isLive ? !!liveText : upcomingItems.length > 0
+  const hasContent = isLive ? liveItems.length > 0 : upcomingItems.length > 0
   if (!hasContent) return null
+
+  // Render live items — icon + (label + player) + score, called twice (a/b) for seamless loop
+  const renderLiveItems = (prefix) => liveItems.map((item, i) => (
+    <span key={`${prefix}-${i}`} className="ticker-item">
+      {item.icon === 'card'
+        ? <span
+            aria-hidden="true"
+            style={{
+              display: 'inline-block', width: 9, height: 12, borderRadius: 2,
+              background: item.color, transform: 'rotate(-8deg)', flexShrink: 0,
+              boxShadow: '0 0 0 1px rgba(0,0,0,0.25)',
+            }}
+          />
+        : <i className={item.icon} style={{ color: item.color, fontSize: 12, flexShrink: 0 }} aria-hidden="true" />
+      }
+      {item.label && <span className="ticker-team" style={{ color: item.color }}>{item.label}</span>}
+      {item.who && <span className="ticker-meta">{item.who}</span>}
+      <span className="ticker-vs">—</span>
+      <span className="ticker-team">{item.score}</span>
+      <span className="ticker-sep">&nbsp;&nbsp;|&nbsp;&nbsp;</span>
+    </span>
+  ))
 
   // Render upcoming items — called twice (a/b) for seamless CSS loop
   const renderItems = (prefix) => upcomingItems.map((item, i) => (
@@ -171,18 +217,19 @@ export default function LiveTicker() {
       </div>
 
       <div className="ticker-scroll" aria-hidden="true">
-        {isLive ? (
-          // Live: plain text, unchanged approach
-          <span className="ticker-text" style={{ animationDuration: `${duration}s` }}>
-            {liveText}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{liveText}
-          </span>
-        ) : (
-          // Upcoming: flex items with flag images
-          <span className="ticker-text ticker-flex" style={{ animationDuration: `${duration}s` }}>
-            {renderItems('a')}
-            {renderItems('b')}
-          </span>
-        )}
+        <span className="ticker-text ticker-flex" style={{ animationDuration: `${duration}s` }}>
+          {isLive ? (
+            <>
+              {renderLiveItems('a')}
+              {renderLiveItems('b')}
+            </>
+          ) : (
+            <>
+              {renderItems('a')}
+              {renderItems('b')}
+            </>
+          )}
+        </span>
       </div>
     </div>
   )

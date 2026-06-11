@@ -13,14 +13,14 @@ import ApiStatus from '../components/common/ApiStatus'
 import NewsReader from '../components/common/NewsReader'
 import '../components/common/MatchCard.css'
 import './Home.css'
- 
+
 // ── Fallback: WC 2026 inaugural (used when no API fixtures available) ───
 const INAUGURAL_DATE = new Date('2026-06-11T22:00:00Z')
 const INAUGURAL = {
   team1: 'Mexico', team2: 'South Africa',
   group: 'A', venue: 'Estadio Azteca, Mexico City',
 }
- 
+
 // ── Countdown hook ────────────────────────────────────
 function useCountdown(target) {
   const calc = () => Math.max(0, (target?.getTime?.() ?? 0) - Date.now())
@@ -38,7 +38,7 @@ function useCountdown(target) {
   const seconds = Math.floor((ms % 60000)    / 1000)
   return { days, hours, minutes, seconds, expired: ms <= 0 }
 }
- 
+
 // ── Normalise phase / round label ────────────────────
 function formatPhase(group, lang) {
   if (!group) return lang === 'es' ? 'Próximo Partido' : 'Next Match'
@@ -67,7 +67,7 @@ function formatPhase(group, lang) {
   if (/final/i.test(g))        return 'Final'
   return g
 }
- 
+
 // ── Flag image from flagcdn.com ───────────────────────
 function FlagImg({ name, size = 44 }) {
   const iso = TEAM_ISO[name]
@@ -86,24 +86,24 @@ function FlagImg({ name, size = 44 }) {
     />
   )
 }
- 
+
 // ── Dynamic countdown to next match ──────────────────
-function DynamicCountdown({ upcoming, lang }) {
+function DynamicCountdown({ upcoming, lang, compact = false }) {
   const [idx, setIdx] = useState(0)
- 
+
   // Reset index when the list changes (fresh fixtures loaded)
   const firstMatchId = upcoming[0]?.id ?? null
   useEffect(() => { setIdx(0) }, [firstMatchId])
- 
+
   const match = upcoming[idx] ?? null
   const targetDate = useMemo(
     () => match ? new Date(match.date) : INAUGURAL_DATE,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [match?.date]
   )
- 
+
   const { days, hours, minutes, seconds, expired } = useCountdown(targetDate)
- 
+
   // When countdown hits 0, advance to the next scheduled match
   useEffect(() => {
     if (!expired) return
@@ -112,10 +112,10 @@ function DynamicCountdown({ upcoming, lang }) {
       return () => clearTimeout(t)
     }
   }, [expired, idx, upcoming.length])
- 
+
   // Nothing left to show
   if (expired && (upcoming.length === 0 || idx >= upcoming.length - 1)) return null
- 
+
   const team1  = match?.team1  ?? INAUGURAL.team1
   const team2  = match?.team2  ?? INAUGURAL.team2
   const phase  = match
@@ -124,11 +124,61 @@ function DynamicCountdown({ upcoming, lang }) {
   const venue  = match
     ? [match.venue, match.stadium].filter(Boolean).join(' · ')
     : INAUGURAL.venue
- 
+
   const units = lang === 'es'
     ? [{ v: days, l: 'Días' }, { v: hours, l: 'Horas' }, { v: minutes, l: 'Min' }, { v: seconds, l: 'Seg' }]
     : [{ v: days, l: 'Days' }, { v: hours, l: 'Hours' }, { v: minutes, l: 'Min' }, { v: seconds, l: 'Sec' }]
- 
+
+  // ── Compact variant: matches MatchCard's height (~145px) so it
+  // sits cleanly next to a single live match card on desktop. ──
+  if (compact) {
+    return (
+      <div className="card" style={{
+        background: 'linear-gradient(135deg, rgba(240,180,41,.08), rgba(240,180,41,.02))',
+        border: '1px solid rgba(240,180,41,.2)',
+        textAlign: 'center', padding: '14px 16px',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        height: '100%', boxSizing: 'border-box',
+      }}>
+        <div className="caption mb-8" style={{
+          color: 'var(--gold)', letterSpacing: 1.5,
+          textTransform: 'uppercase', fontSize: 9,
+        }}>
+          {lang === 'es' ? 'Próximo partido' : 'Next match'}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <FlagImg name={team1} size={28} />
+            <span style={{ fontWeight: 700, fontSize: 11 }}>{team1}</span>
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, color: 'var(--text3)' }}>VS</div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <FlagImg name={team2} size={28} />
+            <span style={{ fontWeight: 700, fontSize: 11 }}>{team2}</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+          {units.map(({ v, l }) => (
+            <div key={l} style={{
+              background: 'rgba(0,0,0,0.3)', borderRadius: 6,
+              padding: '4px 8px', minWidth: 38,
+              border: '1px solid rgba(240,180,41,.15)',
+            }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 16, lineHeight: 1, color: 'var(--gold)' }}>
+                {String(v).padStart(2, '0')}
+              </div>
+              <div className="caption" style={{ fontSize: 8, color: 'var(--text3)', marginTop: 1, textTransform: 'uppercase' }}>
+                {l}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="card" style={{
       background: 'linear-gradient(135deg, rgba(240,180,41,.08), rgba(240,180,41,.02))',
@@ -142,7 +192,7 @@ function DynamicCountdown({ upcoming, lang }) {
       }}>
         {phase} · FIFA World Cup 2026
       </div>
- 
+
       {/* Teams with image flags */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, marginBottom: 20, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
@@ -155,7 +205,7 @@ function DynamicCountdown({ upcoming, lang }) {
           <span style={{ fontWeight: 700, fontSize: 13 }}>{team2}</span>
         </div>
       </div>
- 
+
       {/* Countdown units */}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 12 }}>
         {units.map(({ v, l }) => (
@@ -173,14 +223,14 @@ function DynamicCountdown({ upcoming, lang }) {
           </div>
         ))}
       </div>
- 
+
       {venue && (
         <div className="caption" style={{ color: 'var(--text3)', fontSize: 11 }}>{venue}</div>
       )}
     </div>
   )
 }
- 
+
 // ── Hero ─────────────────────────────────────────────
 function Hero() {
   const { t } = useLang()
@@ -227,7 +277,7 @@ function Hero() {
     </div>
   )
 }
- 
+
 // ── Group standings table ─────────────────────────────
 function GroupTable({ group, groups, lang }) {
   // In API mode, never fall back to mock GROUPS — show loading state instead
@@ -279,7 +329,7 @@ function GroupTable({ group, groups, lang }) {
     </div>
   )
 }
- 
+
 // ── Main component ────────────────────────────────────
 export default function Home() {
   const { t, lang }          = useLang()
@@ -288,19 +338,19 @@ export default function Home() {
   const navigate = useNavigate()
   const [activeGroup, setActiveGroup] = React.useState('A')
   const [reading, setReading]         = useState(null)
- 
+
   const { data: liveMatches, loading: liveLoad } = useApiPolling(getLiveMatches, 30_000)
   const { data: standings  }                      = useApi(getStandings,   { ttl: 3_600_000 })
   const { data: allTeams   }                      = useApi(getTeams,       { ttl: 3_600_000 })
   const { data: headlines  }                      = useApi(getNews, 'all', lang, 10, { ttl: 120_000 })
   const [activeTab, setActiveTab] = useState('goals')
- 
+
   const { data: scorers,     loading: loadGoals   } = useApi(getTopScorers,     null, { ttl: 3_600_000 })
   const { data: assisters,   loading: loadAssists } = useApi(getTopAssists,     null, { ttl: 3_600_000 })
   const { data: yellows,     loading: loadYellows } = useApi(getTopYellowCards, null, { ttl: 3_600_000 })
   const { data: reds,        loading: loadReds    } = useApi(getTopRedCards,    null, { ttl: 3_600_000 })
   const { data: allFixtures, loading: fixturesLoad } = useApi(getAllFixtures,  { ttl: 1_800_000 })
- 
+
   // Next upcoming matches — sorted by date, only future or very-recent kickoffs
   const upcomingMatches = useMemo(() => {
     const cutoff = Date.now() - 120 * 60 * 1000 // still show within 2h after kickoff
@@ -308,52 +358,62 @@ export default function Home() {
       .filter(m => m.status === 'upcoming' && m.date && new Date(m.date).getTime() > cutoff)
       .sort((a, b) => new Date(a.date) - new Date(b.date))
   }, [allFixtures])
- 
+
   const TAB_CONFIG = {
     goals:   { data: scorers,   loading: loadGoals,   statKey: 'goals',       color: 'var(--gold)',     label: lang === 'es' ? 'Goles'      : 'Goals',    labelShort: lang === 'es' ? 'G'   : 'G'   },
     assists: { data: assisters, loading: loadAssists, statKey: 'assists',     color: 'var(--electric)', label: lang === 'es' ? 'Asistencias': 'Assists',   labelShort: lang === 'es' ? 'A'   : 'A'   },
     yellow:  { data: yellows,   loading: loadYellows, statKey: 'yellowCards', color: '#f0b429',         label: lang === 'es' ? 'Amarillas'  : 'Yellow',    labelShort: lang === 'es' ? 'YC'  : 'YC'  },
     red:     { data: reds,      loading: loadReds,    statKey: 'redCards',    color: 'var(--red)',      label: lang === 'es' ? 'Rojas'      : 'Red',       labelShort: lang === 'es' ? 'RC'  : 'RC'  },
   }
- 
+
   const activeConfig = TAB_CONFIG[activeTab]
- 
+
   const topPlayers = useMemo(() => {
     const list = activeConfig?.data || []
     return [...list]
       .sort((a, b) => (b[activeConfig?.statKey] || 0) - (a[activeConfig?.statKey] || 0))
       .slice(0, 5)
   }, [activeConfig])
- 
+
   const rankedTeams = useMemo(() =>
     [...(allTeams || TEAMS)]
       .filter(t => t.rank)
       .sort((a, b) => a.rank - b.rank)
       .slice(0, 5)
   , [allTeams])
- 
+
   const displayMatches = liveMatches?.length ? liveMatches.slice(0, 4) : []
- 
+
   return (
     <div className="page-content page-enter">
       <Hero />
- 
+
       {/* ── Live & Upcoming matches ── */}
       <section className="mb-24">
         <div className="section-header">
           <h2 className="section-title"> <span>{t('home','live_today')}</span></h2>
           <button className="see-all" onClick={() => navigate('/matches')}>{t('common','see_all')} →</button>
         </div>
- 
+
         {liveLoad ? (
           <div className="grid-2">
             {[1,2,3,4].map(i => (
               <div key={i} className="skeleton" style={{ height: 145, borderRadius: 'var(--radius)' }} />
             ))}
           </div>
-        ) : displayMatches.length ? (
+        ) : displayMatches.length >= 2 ? (
           <div className="grid-2">
             {displayMatches.map(m => <MatchCard key={m.id} match={m} />)}
+          </div>
+        ) : displayMatches.length === 1 ? (
+          // Single live match: fill the second column with the next-match countdown
+          // instead of leaving an empty grid cell on desktop.
+          <div className="grid-2">
+            <MatchCard match={displayMatches[0]} />
+            {fixturesLoad
+              ? <div className="skeleton" style={{ height: 145, borderRadius: 'var(--radius)' }} />
+              : <DynamicCountdown upcoming={upcomingMatches} lang={lang} compact />
+            }
           </div>
         ) : (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -368,7 +428,7 @@ export default function Home() {
           </div>
         )}
       </section>
- 
+
       {/* ── Groups + Ranking ── */}
       <section className="grid-2 mb-24">
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -390,7 +450,7 @@ export default function Home() {
             <GroupTable group={activeGroup} groups={standings} lang={lang} />
           </div>
         </div>
- 
+
         <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
           <div className="section-header mb-16">
             <h2 className="section-title"><span>{t('home','ranking')}</span></h2>
@@ -418,7 +478,7 @@ export default function Home() {
                         : 0,
                     transition: 'background 0.2s, transform 0.2s cubic-bezier(0.4,0,0.2,1)',
                   }}>
- 
+
                   {/* ── Rank badge ── */}
                   <div style={{
                     width: 28, height: 28, borderRadius: 6, flexShrink: 0,
@@ -429,7 +489,7 @@ export default function Home() {
                   }}>
                     {team.rank}
                   </div>
- 
+
                   {/* ── Flag ── */}
                   <div style={{ width: 38, height: 26, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {flagSrc ? (
@@ -446,7 +506,7 @@ export default function Home() {
                       <span style={{ fontSize: 20 }}>{team.flag}</span>
                     )}
                   </div>
- 
+
                   {/* ── Name + confederation ── */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="fw-600" style={{ fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--text)' }}>
@@ -454,7 +514,7 @@ export default function Home() {
                     </div>
                     <div className="caption" style={{ fontSize: 10 }}>{team.confederation}</div>
                   </div>
- 
+
                   {/* ── WC titles ── */}
                   {team.titles > 0 && (
                     <div style={{ fontSize: 11, color: 'var(--gold)', fontWeight: 600, flexShrink: 0 }}>
@@ -467,14 +527,14 @@ export default function Home() {
           </div>
         </div>
       </section>
- 
+
       {/* ── Top Players — tabs: Goals / Assists / Yellow / Red ── */}
       <section className="mb-24">
         <div className="section-header">
           <h2 className="section-title"><span>{t('home','top_players')}</span></h2>
           <button className="see-all" onClick={() => navigate('/players')}>{t('common','see_all')} →</button>
         </div>
- 
+
         {/* ── Tabs ── */}
         <div className="tabs" style={{ marginBottom: 0, borderRadius: 'var(--radius) var(--radius) 0 0' }}>
           {Object.entries(TAB_CONFIG).map(([key, cfg]) => (
@@ -488,9 +548,9 @@ export default function Home() {
             </button>
           ))}
         </div>
- 
+
         <div className="card" style={{ padding: 0, overflow: 'hidden', borderRadius: '0 0 var(--radius) var(--radius)', borderTop: 'none' }}>
- 
+
           {/* ── Skeleton ── */}
           {activeConfig.loading && topPlayers.length === 0 && (
             [1,2,3,4,5].map(i => (
@@ -507,7 +567,7 @@ export default function Home() {
               </div>
             ))
           )}
- 
+
           {/* ── Player rows ── */}
           {topPlayers.map((p, i) => {
             const statVal = p[activeConfig.statKey] ?? 0
@@ -515,11 +575,11 @@ export default function Home() {
             const pct     = Math.round((statVal / maxVal) * 100)
             const isFirst = i === 0
             const isLast  = i === topPlayers.length - 1
- 
+
             // Flag from TEAM_ISO using nation name
             const iso     = TEAM_ISO[p.nation]
             const flagSrc = iso ? `https://flagcdn.com/w20/${iso}.png` : null
- 
+
             return (
               <button key={p.id}
                 className="card-clickable"
@@ -534,7 +594,7 @@ export default function Home() {
                   borderRadius: isFirst ? '0' : isLast ? '0 0 var(--radius) var(--radius)' : 0,
                   transition:'background 0.2s, transform 0.2s cubic-bezier(0.4,0,0.2,1)',
                 }}>
- 
+
                 {/* Rank */}
                 <div style={{
                   width:28, height:28, borderRadius:6, flexShrink:0,
@@ -543,7 +603,7 @@ export default function Home() {
                   background: isFirst ? activeConfig.color : 'rgba(255,255,255,0.06)',
                   color: isFirst ? 'var(--navy)' : 'var(--text3)',
                 }}>{i+1}</div>
- 
+
                 {/* Photo */}
                 <div style={{
                   width:40, height:40, borderRadius:'50%', flexShrink:0,
@@ -556,7 +616,7 @@ export default function Home() {
                     ? <img src={p.photo} alt={p.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e=>{e.target.style.display='none'}} />
                     : '⭐'}
                 </div>
- 
+
                 {/* Name + nation + bar */}
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:2 }}>
@@ -584,7 +644,7 @@ export default function Home() {
                     }} />
                   </div>
                 </div>
- 
+
                 {/* Stat value */}
                 <div style={{ textAlign:'center', flexShrink:0, minWidth:36 }}>
                   <div style={{ fontFamily:'var(--font-display)', fontSize:22, color: activeConfig.color, lineHeight:1 }}>
@@ -597,7 +657,7 @@ export default function Home() {
               </button>
             )
           })}
- 
+
           {/* Empty state */}
           {!activeConfig.loading && topPlayers.length === 0 && (
             <div style={{ padding:'32px 20px', textAlign:'center', color:'var(--text3)', fontSize:13 }}>
@@ -606,7 +666,7 @@ export default function Home() {
           )}
         </div>
       </section>
- 
+
       {/* ── News ── */}
       <section>
         <div className="section-header">
@@ -675,7 +735,7 @@ export default function Home() {
           ))}
         </div>
       </section>
- 
+
       {/* In-app article reader */}
       <NewsReader article={reading} onClose={() => setReading(null)} />
     </div>
