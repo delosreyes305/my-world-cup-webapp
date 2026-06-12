@@ -486,43 +486,15 @@ export async function getTeamFixtures(teamId) {
 // ─────────────────────────────────────────────────────
 
 /**
- * Top scorers del Mundial.
- * - Durante el torneo: usa el endpoint /topscorers (ordenado por goles WC).
- * - Pre-torneo (endpoint vacío): carga jugadores de los primeros 3 equipos del
- *   torneo en paralelo para mostrar datos reales de la API aunque no haya goles.
+ * Top scorers/assists/cards del Mundial.
+ * Usa los endpoints oficiales de API-Football, ordenados de mayor a menor.
+ * Apenas haya 1+ jugador real con esa estadística, se muestra de
+ * inmediato — sin rellenar con jugadores hardcodeados de equipos
+ * prioritarios. Si la API aún no tiene datos, devuelve [] y la UI
+ * muestra "Sin datos disponibles aún".
  */
-/**
- * Fallback compartido — carga jugadores de los 7 equipos más conocidos
- * cuando el endpoint de ranking devuelve vacío (pre-torneo o sin datos).
- */
-async function _fetchPriorityPlayers() {
-  const teamsData = await get(
-    `${BASE}/teams?league=${WC_LEAGUE}&season=${WC_SEASON}`,
-    { headers }
-  )
-  const allTeamEntries = (teamsData.response || []).map(r => ({ id: r.team.id, name: r.team.name }))
-  if (!allTeamEntries.length) return []
-
-  const PRIORITY = ['Argentina', 'Brazil', 'France', 'Portugal', 'England', 'Spain', 'Germany']
-  const priorityIds = PRIORITY
-    .map(name => allTeamEntries.find(t => t.name === name)?.id)
-    .filter(Boolean)
-
-  const extra = allTeamEntries
-    .filter(t => !priorityIds.includes(t.id))
-    .slice(0, Math.max(0, 5 - priorityIds.length))
-    .map(t => t.id)
-
-  const teamIds = [...priorityIds, ...extra].slice(0, 7)
-
-  const pages = await Promise.all(
-    teamIds.map(tid =>
-      get(`${BASE}/players?team=${tid}&season=${WC_SEASON}&page=1`, { headers })
-    )
-  )
-  return pages
-    .flatMap(p => (p.response || []).map(normalizePlayer))
-    .filter((p, i, arr) => arr.findIndex(x => x.id === p.id) === i) // dedup
+function _sortByStat(players, statKey) {
+  return [...players].sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0))
 }
 
 export async function getTopScorers() {
@@ -532,11 +504,9 @@ export async function getTopScorers() {
     `${BASE}/players/topscorers?league=${WC_LEAGUE}&season=${WC_SEASON}`,
     { headers }
   )
-  // 🔍 DEBUG — borrar después
 
   const topScorers = (topData.response || []).map(normalizePlayer)
-  if (topScorers.length > 5) return topScorers
-  return _fetchPriorityPlayers()
+  return _sortByStat(topScorers, 'goals')
 }
 
 /** Top asistidores del Mundial */
@@ -548,10 +518,7 @@ export async function getTopAssists() {
     { headers }
   )
   const players = (data.response || []).map(normalizePlayer)
-  if (players.length > 5) return players
-
-  // Fallback — mismo set de equipos prioritarios que topscorers
-  return _fetchPriorityPlayers()
+  return _sortByStat(players, 'assists')
 }
 
 /** Top tarjetas amarillas del Mundial */
@@ -563,9 +530,7 @@ export async function getTopYellowCards() {
     { headers }
   )
   const players = (data.response || []).map(normalizePlayer)
-  if (players.length > 5) return players
-
-  return _fetchPriorityPlayers()
+  return _sortByStat(players, 'yellowCards')
 }
 
 /** Top tarjetas rojas del Mundial */
@@ -577,9 +542,7 @@ export async function getTopRedCards() {
     { headers }
   )
   const players = (data.response || []).map(normalizePlayer)
-  if (players.length > 5) return players
-
-  return _fetchPriorityPlayers()
+  return _sortByStat(players, 'redCards')
 }
 
 /**
@@ -1023,7 +986,11 @@ function normalizeStandings(response) {
   const standings = response[0]?.league?.standings || []
   const groups = {}
   standings.forEach(group => {
-    const letter = group[0]?.group?.replace('Group ', '') || '?'
+    // API now returns e.g. "Group Stage - Group A" instead of just "Group A".
+    // Take the text after the last " - " (or the whole string if no dash),
+    // then strip the "Group " prefix to get just the letter ("A", "B", ...).
+    const rawGroup = group[0]?.group || ''
+    const letter = rawGroup.split(' - ').pop()?.replace('Group ', '').trim() || '?'
     groups[letter] = group.map(t => ({
       flag: t.team.logo,
       name: t.team.name,
@@ -1083,12 +1050,20 @@ function normalizeSquadPlayer(p, teamId, nation = '') {
  * @param {number|null} teamId – WC-2026 national team ID (set by getAllTeamPlayers)
  */
 function normalizePlayer(raw, teamId = null) {
-  const p  = raw.player
-  const st = raw.statistics?.[0] || {}
+  const p    = raw.player
+  // raw.statistics can contain multiple entries (one per competition the
+  // player appeared in this season — World Cup, qualifiers, friendlies,
+  // club league, etc). Only use the World Cup 2026 (league=1) entry so we
+  // never show goals/assists/cards from old competitions.
+  const stats = raw.statistics || []
+  const st = stats.find(s => s.league?.id === WC_LEAGUE && s.league?.season === WC_SEASON)
+    || stats.find(s => s.league?.id === WC_LEAGUE)
+    || {}
 
-  // When fetching from a national-team endpoint, st.team.name === nationality.
-  // We don't want to show the national team as the "club".
-  const teamName    = st.team?.name || ''
+  // Club name: prefer a non-World-Cup statistics entry (the player's
+  // domestic club), since st.team in the WC entry is the national team.
+  const clubStats = stats.find(s => s.league?.id !== WC_LEAGUE && s.team?.name)
+  const teamName    = clubStats?.team?.name || st.team?.name || ''
   const nationality = p.nationality || ''
   const club        = teamName && teamName !== nationality ? teamName : ''
 
