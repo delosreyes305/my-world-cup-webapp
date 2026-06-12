@@ -108,7 +108,7 @@ def forgot_password():
     db.session.add(reset_token)
     db.session.commit()
 
-    frontend_url = current_app.config.get('FRONTEND_URL') or 'http://localhost:3000'
+    frontend_url = os.getenv('FRONTEND_URL') or 'http://localhost:3000'
     reset_url    = f"{frontend_url}/reset-password?token={token}"
 
     # Enviar correo vía Resend (mismo proveedor que el resto de la app)
