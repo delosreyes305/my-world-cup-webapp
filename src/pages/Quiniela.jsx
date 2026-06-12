@@ -493,6 +493,107 @@ function LeaderboardTable({ board, lang }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// MY PREDICTIONS — history of past (locked) predictions with results
+// ─────────────────────────────────────────────────────────────────────
+function MyPredictionsTab({ predictions, lang }) {
+  const past = (predictions || [])
+    .filter(p => isLocked(p.match_date))
+    .sort((a, b) => new Date(b.match_date) - new Date(a.match_date)) // most recent first
+
+  if (!past.length) return (
+    <div className="card" style={{ textAlign: 'center', padding: '40px 24px', color: 'var(--text3)' }}>
+      <div style={{ fontSize: 32, marginBottom: 12, color: 'var(--gold)' }}>
+        <i className="fa-solid fa-clock-rotate-left" aria-hidden="true" />
+      </div>
+      <div className="fw-600" style={{ fontSize: 14, marginBottom: 6, color: 'var(--text)' }}>
+        {lang === 'es' ? 'Aún no tienes predicciones anteriores' : 'No past predictions yet'}
+      </div>
+      <div style={{ fontSize: 12 }}>
+        {lang === 'es'
+          ? 'Cuando un partido que predijiste comience, aparecerá aquí.'
+          : 'Once a match you predicted starts, it will show up here.'}
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {past.map(p => {
+        const s        = p.score
+        const dateObj  = p.match_date ? new Date(p.match_date) : null
+        const dateStr  = dateObj
+          ? dateObj.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-US', { day: '2-digit', month: 'short' })
+          : ''
+
+        // Badge: exact score (5) > correct winner (3) > wrong (0) > pending (no score yet)
+        let badge
+        if (!s) {
+          badge = { text: lang === 'es' ? 'Pendiente' : 'Pending', color: 'var(--text3)', bg: 'rgba(255,255,255,0.06)' }
+        } else if (s.correct_score) {
+          badge = { text: `+${s.points} ⭐`, color: 'var(--gold)', bg: 'rgba(240,180,41,0.12)' }
+        } else if (s.correct_winner) {
+          badge = { text: `+${s.points}`, color: 'var(--green)', bg: 'rgba(34,197,94,0.12)' }
+        } else {
+          badge = { text: '0', color: 'var(--text3)', bg: 'rgba(255,255,255,0.06)' }
+        }
+
+        return (
+          <div key={p.id} className="card" style={{
+            padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            {/* Date */}
+            <div style={{ fontSize: 10, color: 'var(--text3)', flexShrink: 0, minWidth: 38, textAlign: 'center' }}>
+              {dateStr}
+            </div>
+
+            {/* Teams + scores */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <FlagImg name={p.team1} size={16} />
+                <span className="fw-600" style={{ fontSize: 12, color: 'var(--text)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {p.team1}
+                </span>
+                <span style={{ fontSize: 12, color: 'var(--text3)' }}>
+                  {s ? `${s.actual_home}-${s.actual_away}` : '–'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FlagImg name={p.team2} size={16} />
+                <span className="fw-600" style={{ fontSize: 12, color: 'var(--text)', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {p.team2}
+                </span>
+                <span style={{ fontSize: 12, color: 'var(--text3)' }}>
+                  {s ? `${s.actual_away}-${s.actual_home}` : '–'}
+                </span>
+              </div>
+            </div>
+
+            {/* My prediction */}
+            <div style={{ textAlign: 'center', flexShrink: 0, padding: '0 6px' }}>
+              <div style={{ fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 }}>
+                {lang === 'es' ? 'Mi pred.' : 'My pick'}
+              </div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 15, color: 'var(--text)' }}>
+                {p.pred_home}-{p.pred_away}
+              </div>
+            </div>
+
+            {/* Points badge */}
+            <div style={{
+              flexShrink: 0, minWidth: 56, textAlign: 'center', padding: '4px 8px',
+              borderRadius: 8, background: badge.bg, color: badge.color,
+              fontSize: 12, fontWeight: 700,
+            }}>
+              {badge.text}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // GLOBAL LEADERBOARD TAB
 // ─────────────────────────────────────────────────────────────────────
 function GlobalTab({ token, lang, myProfile }) {
@@ -981,6 +1082,7 @@ export default function Quiniela() {
 
   const tabs = [
     { key: 'predict',  label: lang === 'es' ? 'Predecir'   : 'Predict',   icon: 'fa-solid fa-pen-to-square' },
+    { key: 'history',  label: lang === 'es' ? 'Mis predicciones' : 'My predictions', icon: 'fa-solid fa-clock-rotate-left' },
     { key: 'global',   label: lang === 'es' ? 'Global'     : 'Global',    icon: 'fa-solid fa-ranking-star'  },
     { key: 'leagues',  label: lang === 'es' ? 'Mis ligas'  : 'My leagues', icon: 'fa-solid fa-users'        },
   ]
@@ -1184,6 +1286,9 @@ export default function Quiniela() {
           predictions={predictions}
           onPredictionSaved={loadPredictions}
         />
+      )}
+      {activeTab === 'history' && (
+        <MyPredictionsTab predictions={predictions} lang={lang} />
       )}
       {activeTab === 'global' && (
         <GlobalTab token={token} lang={lang} myProfile={profile} />
