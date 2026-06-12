@@ -1,5 +1,5 @@
 # ─── My World Cup 2026 — Flask Backend ───────────────────────────────
-# Stack: Flask + SQLAlchemy + PostgreSQL (Supabase) + JWT + Bcrypt + Mail
+# Stack: Flask + SQLAlchemy + PostgreSQL (Supabase) + JWT + Bcrypt + Resend (email)
 #
 # Arrancar:
 #   cd backend
@@ -13,7 +13,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 
-from extensions import db, bcrypt, jwt, mail
+from extensions import db, bcrypt, jwt
 from apscheduler.schedulers.background import BackgroundScheduler
 
 load_dotenv()
@@ -40,14 +40,6 @@ def create_app():
     app.config['JWT_SECRET_KEY']         = os.getenv('JWT_SECRET_KEY', 'dev-secret-CHANGE-IN-PROD')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = False   # cambiar a timedelta(days=7) en prod
 
-    # ── Email ─────────────────────────────────────────────────────────
-    app.config['MAIL_SERVER']         = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
-    app.config['MAIL_PORT']           = int(os.getenv('MAIL_PORT', 587))
-    app.config['MAIL_USE_TLS']        = True
-    app.config['MAIL_USERNAME']       = os.getenv('MAIL_USERNAME')
-    app.config['MAIL_PASSWORD']       = os.getenv('MAIL_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER') or os.getenv('MAIL_USERNAME')
-
     # ── CORS ──────────────────────────────────────────────────────────
     CORS(app, resources={
         r'/api/*': {
@@ -68,7 +60,6 @@ def create_app():
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
-    mail.init_app(app)
 
     # ── Health check (Railway uses this to verify the app is ready) ──
     from flask import jsonify as _jsonify

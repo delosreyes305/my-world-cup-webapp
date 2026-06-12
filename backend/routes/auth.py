@@ -1,12 +1,13 @@
+import os
 import re
 import secrets
 from datetime import datetime, timedelta
 
+import resend
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-from flask_mail import Message
 
-from extensions import db, bcrypt, mail
+from extensions import db, bcrypt
 from models import User, PasswordResetToken
 
 auth_bp = Blueprint('auth', __name__)
@@ -110,12 +111,13 @@ def forgot_password():
     frontend_url = current_app.config.get('FRONTEND_URL') or 'http://localhost:3000'
     reset_url    = f"{frontend_url}/reset-password?token={token}"
 
-    # Enviar correo
-    try:
-        msg = Message(
-            subject    = 'Recupera tu contraseña — My World Cup 2026',
-            recipients = [user.email],
-            html       = f"""
+    # Enviar correo vía Resend (mismo proveedor que el resto de la app)
+    resend.api_key = os.getenv('RESEND_API_KEY', '')
+    if not resend.api_key:
+        current_app.logger.error('RESEND_API_KEY no configurada — no se pudo enviar el correo de recuperación')
+        return jsonify({'error': 'No se pudo enviar el correo. Verifica la configuración de email en el .env'}), 500
+
+    html = f"""
 <!DOCTYPE html>
 <html>
 <body style="font-family:Arial,sans-serif;background:#0a0e1a;color:#e2e8f0;margin:0;padding:40px 20px;">
@@ -149,9 +151,15 @@ def forgot_password():
   </div>
 </body>
 </html>
-            """,
-        )
-        mail.send(msg)
+    """
+
+    try:
+        resend.Emails.send({
+            'from':    'My World Cup 2026 <noreply@myfootballworldcup.com>',
+            'to':      [user.email],
+            'subject': 'Recupera tu contraseña — My World Cup 2026',
+            'html':    html,
+        })
     except Exception as e:
         current_app.logger.error(f'Error enviando email de recuperación: {e}')
         return jsonify({'error': 'No se pudo enviar el correo. Verifica la configuración de email en el .env'}), 500
