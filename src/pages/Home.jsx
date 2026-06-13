@@ -542,6 +542,16 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── Highlights ── */}
+      {matchHighlights.length > 0 && (
+        <section className="mb-24">
+          <div className="section-header mb-16">
+            <h2 className="section-title"> <span>{t('home','highlights')}</span></h2>
+          </div>
+          <HighlightsCarousel highlights={matchHighlights} lang={lang} />
+        </section>
+      )}
+
       {/* ── Top Players — tabs: Goals / Assists / Yellow / Red ── */}
       <section className="mb-24">
         <div className="section-header">
@@ -753,15 +763,6 @@ export default function Home() {
       {/* In-app article reader */}
       <NewsReader article={reading} onClose={() => setReading(null)} />
 
-      {/* ── Highlights ── */}
-      {matchHighlights.length > 0 && (
-        <section className="mt-24">
-          <div className="section-header mb-16">
-            <h2 className="section-title"> <span>{t('home','highlights')}</span></h2>
-          </div>
-          <HighlightsCarousel highlights={matchHighlights} lang={lang} />
-        </section>
-      )}
     </div>
   )
 }
