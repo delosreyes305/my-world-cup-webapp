@@ -178,3 +178,20 @@
 .news-body { padding: 14px 16px; }
 .news-cat  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
 .news-title { font-size: 13px; font-weight: 600; line-height: 1.4; margin-bottom: 6px; color: var(--text); }
+
+/* Highlights grid — 4 cols desktop, 4 tablet, 3 mobile */
+.highlights-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+/* Hide 5th item on all sizes */
+.highlights-grid > article:nth-child(n+5) { display: none; }
+
+@media (max-width: 1024px) {
+  .highlights-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 768px) {
+  .highlights-grid { grid-template-columns: repeat(3, 1fr); }
+  .highlights-grid > article:nth-child(n+4) { display: none; }
+}

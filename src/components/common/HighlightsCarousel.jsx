@@ -55,9 +55,9 @@ export default function HighlightsCarousel({ highlights, lang }) {
           <article
             key={match.id}
             style={{
-              flex: '0 0 calc(33.33% - 8px)',
-              minWidth: 220,
-              maxWidth: 320,
+              flex: '0 0 clamp(280px, 80vw, 320px)',
+              minWidth: 0,
+              maxWidth: 'clamp(280px, 80vw, 320px)',
               scrollSnapAlign: 'start',
               borderRadius: 12,
               overflow: 'hidden',
