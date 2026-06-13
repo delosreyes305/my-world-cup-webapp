@@ -5,6 +5,8 @@ import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useApi } from '../hooks/useApi'
 import { getMatchStats, getMatchEvents, getTeams, getMatchPrediction, getMatchOdds, getHeadToHead } from '../services/sportsService'
+import { getMatchHighlight } from '../services/youtubeService'
+import YouTubeEmbed from '../components/common/YouTubeEmbed'
 import { MATCHES, TEAMS } from '../data/mockData'
 import ApiStatus from '../components/common/ApiStatus'
 
@@ -134,6 +136,13 @@ export default function MatchDetail() {
       h2hKey,
       { skip: !h2hKey, ttl: 86_400_000 }
     )
+
+  // Highlight video — only for finished matches
+  const { data: highlight } = useApi(
+    () => getMatchHighlight(match?.team1, match?.team2),
+    `${match?.team1}-${match?.team2}`,
+    { skip: !match || match.status !== 'ft', ttl: 1_800_000 }
+  )
 
   // ── Auth gate — wait for token validation before showing sign-in ──
   if (!user && !authLoading) return (
@@ -334,6 +343,21 @@ export default function MatchDetail() {
           </button>
         </div>
       </div>
+
+      {/* ── Highlights ── */}
+      {status === 'ft' && highlight && (
+        <div className="card mb-16" style={{ padding: 0, overflow: 'hidden' }}>
+          <div style={{ padding: '12px 16px 0' }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, margin: '0 0 10px', color: 'var(--text)' }}>
+              <i className="fa-solid fa-circle-play" style={{ color: 'var(--gold)', marginRight: 8 }} aria-hidden="true" />
+              {t('home','highlights')}
+            </h3>
+          </div>
+          <div style={{ padding: '0 16px 16px' }}>
+            <YouTubeEmbed videoId={highlight.videoId} title={highlight.title} thumbnail={highlight.thumbnail} />
+          </div>
+        </div>
+      )}
 
       {/* ── Predictions + Odds ── */}
       {!skipPred && (predLoad || prediction || odds) && (

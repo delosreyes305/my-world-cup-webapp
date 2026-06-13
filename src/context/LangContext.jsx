@@ -11,7 +11,7 @@ const translations = {
       hero_sub: 'Your ultimate companion for the greatest football tournament on Earth',
       live_today: 'Live & Today', top_players: 'Top Players',
       latest_news: 'Latest News', group_stage: 'Group Stage', ranking: 'Ranking',
-      no_live: 'No live matches right now.',
+      no_live: 'No live matches right now.', highlights: 'Highlights',
     },
     common: {
       see_all: 'See all', teams: 'Teams', matches: 'Matches',
@@ -96,7 +96,7 @@ const translations = {
       hero_sub: 'Tu compañero definitivo para el torneo de fútbol más grande del planeta',
       live_today: 'En Vivo & Hoy', top_players: 'Mejores Jugadores',
       latest_news: 'Últimas Noticias', group_stage: 'Fase de Grupos', ranking: 'Ranking',
-      no_live: 'No hay partidos en vivo ahora.',
+      no_live: 'No hay partidos en vivo ahora.', highlights: 'Resúmenes',
     },
     common: {
       see_all: 'Ver todo', teams: 'Equipos', matches: 'Partidos',

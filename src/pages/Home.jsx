@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext'
 import { useApi, useApiPolling } from '../hooks/useApi'
 import { getLiveMatches, getStandings, getTopScorers, getTopAssists, getTopYellowCards, getTopRedCards, getTeams, getAllFixtures, TEAM_ISO } from '../services/sportsService'
 import { getNews } from '../services/newsService'
+import { getWorldCupHighlights, findHighlightForMatch } from '../services/youtubeService'
+import YouTubeEmbed from '../components/common/YouTubeEmbed'
 import { TEAMS, GROUPS } from '../data/mockData'
 import { IS_MOCK } from '../services/sportsService'
 import MatchCard from '../components/common/MatchCard'
@@ -350,6 +352,18 @@ export default function Home() {
   const { data: yellows,     loading: loadYellows } = useApi(getTopYellowCards, null, { ttl: 3_600_000 })
   const { data: reds,        loading: loadReds    } = useApi(getTopRedCards,    null, { ttl: 3_600_000 })
   const { data: allFixtures, loading: fixturesLoad } = useApi(getAllFixtures,  { ttl: 1_800_000 })
+  const { data: ytHighlights } = useApi(getWorldCupHighlights, { ttl: 1_800_000 })
+
+  // Recently finished matches that have a FOX Soccer highlight video
+  const matchHighlights = useMemo(() => {
+    if (!allFixtures?.length || !ytHighlights?.length) return []
+    return allFixtures
+      .filter(m => m.status === 'ft')
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .map(m => ({ match: m, video: findHighlightForMatch(ytHighlights, m.team1, m.team2) }))
+      .filter(x => x.video)
+      .slice(0, 6)
+  }, [allFixtures, ytHighlights])
 
   // Next upcoming matches — sorted by date, only future or very-recent kickoffs
   const upcomingMatches = useMemo(() => {
@@ -738,6 +752,30 @@ export default function Home() {
 
       {/* In-app article reader */}
       <NewsReader article={reading} onClose={() => setReading(null)} />
+
+      {/* ── Highlights ── */}
+      {matchHighlights.length > 0 && (
+        <section className="mt-24">
+          <div className="section-header">
+            <h2 className="section-title"> <span>{t('home','highlights')}</span></h2>
+          </div>
+          <div className="news-home-grid">
+            {matchHighlights.map(({ match, video }) => (
+              <article key={match.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <YouTubeEmbed videoId={video.videoId} title={video.title} thumbnail={video.thumbnail} />
+                <div style={{ padding: '10px 12px' }}>
+                  <div className="fw-600" style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>
+                    {match.team1} {match.score1}–{match.score2} {match.team2}
+                  </div>
+                  <div className="caption" style={{ fontSize: 11, color: 'var(--text3)' }}>
+                    {match.group}
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   )
 }
