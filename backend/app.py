@@ -91,7 +91,8 @@ app = create_app()
 # ── Scheduler de notificaciones ───────────────────────────────────────
 # Se inicia solo en el proceso principal (evita duplicados con el
 # reloader de Werkzeug en modo debug).
-if os.environ.get('WERKZEUG_RUN_MAIN') != 'false':
+# Start scheduler in main process (skip in Werkzeug reloader child to avoid duplicates)
+if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
     from jobs.match_notifier   import check_upcoming_matches
     from jobs.news_notifier    import check_news_favorites
     from jobs.score_calculator  import calculate_scores
