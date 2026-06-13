@@ -195,7 +195,6 @@ export default function TeamDetail() {
                   width: 90, height: 60, borderRadius: 8,
                   border: '2.5px solid var(--card)',
                   flexShrink: 0, overflow: 'hidden', background: '#0a1628',
-                  flexShrink: 0, overflow: 'hidden', background: '#0a1628',
                 }}>
                   {iso
                     ? <img
