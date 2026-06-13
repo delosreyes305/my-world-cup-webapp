@@ -173,29 +173,30 @@ def calculate_scores(app):
             print(f'[score_calculator] Scored {processed} prediction(s)')
 
 # ── Request-triggered fallback ─────────────────────────────────────────
-# The 15-min scheduled job depends on the container staying alive long
-# enough between ticks. On platforms that recycle/restart the container
-# often, that scheduled job may rarely (or never) get the chance to fire.
-#
-# As a self-healing fallback, the main quiniela endpoints (leaderboard,
-# my predictions, etc.) call maybe_calculate_scores() on every request.
-# A short cooldown prevents this from running on every single request /
-# hammering the football API.
-_last_run = None
-_COOLDOWN = timedelta(minutes=2)
+# Uses a temp file as a cross-worker cooldown lock so all Gunicorn
+# workers share the same "last run" timestamp — not just in-memory.
+import tempfile, pathlib
+
+_LOCK_FILE = pathlib.Path(tempfile.gettempdir()) / 'score_calc_last_run'
+_COOLDOWN  = timedelta(minutes=3)
 
 
 def maybe_calculate_scores(app):
     """
-    Runs calculate_scores() if it hasn't run in the last _COOLDOWN
-    window. Safe to call from any request handler — cheap no-op most
-    of the time, and self-heals missed scheduler ticks.
+    Runs calculate_scores() at most once every _COOLDOWN across ALL
+    Gunicorn workers (uses a shared temp file as a lock).
+    Safe to call from any request handler.
     """
-    global _last_run
-    now = datetime.utcnow()
-    if _last_run is not None and (now - _last_run) < _COOLDOWN:
-        return
-    _last_run = now
+    try:
+        now = datetime.utcnow()
+        if _LOCK_FILE.exists():
+            last = datetime.utcfromtimestamp(_LOCK_FILE.stat().st_mtime)
+            if (now - last) < _COOLDOWN:
+                return
+        _LOCK_FILE.touch()
+    except Exception:
+        pass  # never block a request over a lock failure
+
     try:
         calculate_scores(app)
     except Exception as exc:
