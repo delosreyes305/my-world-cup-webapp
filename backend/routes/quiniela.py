@@ -1,9 +1,11 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
+import os
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
  
 from extensions import db
+from jobs.score_calculator import maybe_calculate_scores
 from models import (
     User, QuinielaProfile, Prediction, PredictionScore,
     PrivateLeague, LeagueMember, QuinielaChampion,
@@ -90,6 +92,7 @@ def create_or_update_profile():
 @quiniela_bp.route('/predictions', methods=['GET'])
 @jwt_required()
 def get_my_predictions():
+    maybe_calculate_scores(current_app._get_current_object())
     user_id = int(get_jwt_identity())
     profile = _get_profile_or_404(user_id)
     if not profile:
@@ -209,6 +212,7 @@ def delete_prediction(fixture_id):
 @quiniela_bp.route('/leaderboard', methods=['GET'])
 @jwt_required()
 def global_leaderboard():
+    maybe_calculate_scores(current_app._get_current_object())
     page     = request.args.get('page', 1, type=int)
     per_page = min(request.args.get('per_page', 50, type=int), 100)
  
@@ -350,6 +354,7 @@ def join_league():
 @quiniela_bp.route('/leagues/<int:league_id>', methods=['GET'])
 @jwt_required()
 def league_leaderboard(league_id):
+    maybe_calculate_scores(current_app._get_current_object())
     user_id = int(get_jwt_identity())
  
     league = PrivateLeague.query.get(league_id)
@@ -509,3 +514,23 @@ def league_champions(league_id):
             league_champs[champ.phase] = champ.to_dict()
 
     return jsonify({'champions': league_champs}), 200
+
+# ── Admin: force score recalculation ───────────────────────────────────
+@quiniela_bp.route('/admin/recalculate-scores', methods=['POST'])
+def admin_recalculate_scores():
+    """
+    Manually re-run the score calculator job right now.
+    Protected by a shared secret (header X-Admin-Secret) so it can be
+    triggered from a browser/Postman without SSH access — useful when
+    the scheduled job missed a finished match.
+
+    Set ADMIN_SECRET in Railway env vars to enable this endpoint.
+    """
+    secret = os.getenv('ADMIN_SECRET', '')
+    if not secret or request.headers.get('X-Admin-Secret') != secret:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    from jobs.score_calculator import calculate_scores
+    calculate_scores(current_app._get_current_object())
+
+    return jsonify({'message': 'Score recalculation triggered'}), 200

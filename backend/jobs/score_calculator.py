@@ -11,7 +11,7 @@ Point system:
 """
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from models import Prediction, PredictionScore, QuinielaProfile
 from extensions import db
@@ -92,57 +92,111 @@ def calculate_scores(app):
 
         processed = 0
         for fixture_id, preds in by_fixture.items():
-            fixture = _fetch_fixture(fixture_id)
-            if not fixture:
-                continue
-
-            status     = fixture.get('fixture', {}).get('status', {}).get('short', '')
-            if status not in FINISHED:
-                continue  # match not finished yet
-
-            goals      = fixture.get('goals', {})
-            actual_home = goals.get('home')
-            actual_away = goals.get('away')
-
-            if actual_home is None or actual_away is None:
-                continue  # no score data yet
-
-            for pred in preds:
-                # Skip if already scored (race condition guard)
-                if PredictionScore.query.filter_by(prediction_id=pred.id).first():
+            try:
+                fixture = _fetch_fixture(fixture_id)
+                if not fixture:
                     continue
 
-                pts, correct_winner, correct_score = _calculate_points(
-                    pred.pred_home, pred.pred_away, actual_home, actual_away
-                )
+                status = fixture.get('fixture', {}).get('status', {}).get('short', '')
+                if status not in FINISHED:
+                    continue  # match not finished yet
 
-                score = PredictionScore(
-                    prediction_id=pred.id,
-                    user_id=pred.user_id,
-                    fixture_id=fixture_id,
-                    points=pts,
-                    correct_winner=correct_winner,
-                    correct_score=correct_score,
-                    actual_home=actual_home,
-                    actual_away=actual_away,
-                )
-                db.session.add(score)
+                goals       = fixture.get('goals', {})
+                actual_home = goals.get('home')
+                actual_away = goals.get('away')
 
-                # Update QuinielaProfile totals
-                profile = QuinielaProfile.query.filter_by(user_id=pred.user_id).first()
-                if profile:
-                    profile.total_points    += pts
-                    if correct_winner:
-                        profile.correct_winners += 1
-                    if correct_score:
-                        profile.correct_scores  += 1
+                if actual_home is None or actual_away is None:
+                    continue  # no score data yet
 
-                processed += 1
+                for pred in preds:
+                    try:
+                        # Skip if already scored (race condition guard)
+                        if PredictionScore.query.filter_by(prediction_id=pred.id).first():
+                            continue
+
+                        # Skip predictions with incomplete data instead of
+                        # crashing the whole batch (e.g. None values)
+                        if pred.pred_home is None or pred.pred_away is None:
+                            print(f'[score_calculator] Skipping prediction {pred.id}: missing pred_home/pred_away')
+                            continue
+
+                        pts, correct_winner, correct_score = _calculate_points(
+                            pred.pred_home, pred.pred_away, actual_home, actual_away
+                        )
+
+                        score = PredictionScore(
+                            prediction_id=pred.id,
+                            user_id=pred.user_id,
+                            fixture_id=fixture_id,
+                            points=pts,
+                            correct_winner=correct_winner,
+                            correct_score=correct_score,
+                            actual_home=actual_home,
+                            actual_away=actual_away,
+                        )
+                        db.session.add(score)
+
+                        # Update QuinielaProfile totals
+                        profile = QuinielaProfile.query.filter_by(user_id=pred.user_id).first()
+                        if profile:
+                            profile.total_points += pts
+                            if correct_winner:
+                                profile.correct_winners += 1
+                            if correct_score:
+                                profile.correct_scores += 1
+
+                        processed += 1
+                    except Exception as exc:
+                        # One bad prediction shouldn't block the rest
+                        db.session.rollback()
+                        print(f'[score_calculator] Error scoring prediction {pred.id} (fixture {fixture_id}): {exc}')
+                        continue
+
+                # Commit per-fixture so a problem in one fixture doesn't
+                # roll back successfully-scored predictions from another
+                if processed > 0:
+                    try:
+                        db.session.commit()
+                    except Exception as exc:
+                        db.session.rollback()
+                        print(f'[score_calculator] Error committing scores for fixture {fixture_id}: {exc}')
+
+            except Exception as exc:
+                # Never let a single fixture take down the whole job —
+                # otherwise this exception repeats every 15 min forever
+                # and NOTHING ever gets scored again.
+                db.session.rollback()
+                print(f'[score_calculator] Unexpected error processing fixture {fixture_id}: {exc}')
+                continue
 
         if processed > 0:
-            try:
-                db.session.commit()
-                print(f'[score_calculator] Scored {processed} prediction(s)')
-            except Exception as exc:
-                db.session.rollback()
-                print(f'[score_calculator] Error committing scores: {exc}')
+            print(f'[score_calculator] Scored {processed} prediction(s)')
+
+# ── Request-triggered fallback ─────────────────────────────────────────
+# The 15-min scheduled job depends on the container staying alive long
+# enough between ticks. On platforms that recycle/restart the container
+# often, that scheduled job may rarely (or never) get the chance to fire.
+#
+# As a self-healing fallback, the main quiniela endpoints (leaderboard,
+# my predictions, etc.) call maybe_calculate_scores() on every request.
+# A short cooldown prevents this from running on every single request /
+# hammering the football API.
+_last_run = None
+_COOLDOWN = timedelta(minutes=2)
+
+
+def maybe_calculate_scores(app):
+    """
+    Runs calculate_scores() if it hasn't run in the last _COOLDOWN
+    window. Safe to call from any request handler — cheap no-op most
+    of the time, and self-heals missed scheduler ticks.
+    """
+    global _last_run
+    now = datetime.utcnow()
+    if _last_run is not None and (now - _last_run) < _COOLDOWN:
+        return
+    _last_run = now
+    try:
+        calculate_scores(app)
+    except Exception as exc:
+        print(f'[score_calculator] maybe_calculate_scores error: {exc}')
