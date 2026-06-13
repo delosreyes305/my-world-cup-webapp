@@ -8,6 +8,7 @@ import { getLiveMatches, getStandings, getTopScorers, getTopAssists, getTopYello
 import { getNews } from '../services/newsService'
 import { getWorldCupHighlights, findHighlightForMatch } from '../services/youtubeService'
 import YouTubeEmbed from '../components/common/YouTubeEmbed'
+import HighlightsCarousel from '../components/common/HighlightsCarousel'
 import { TEAMS, GROUPS } from '../data/mockData'
 import { IS_MOCK } from '../services/sportsService'
 import MatchCard from '../components/common/MatchCard'
@@ -362,7 +363,6 @@ export default function Home() {
       .sort((a, b) => new Date(b.date) - new Date(a.date))
       .map(m => ({ match: m, video: findHighlightForMatch(ytHighlights, m.team1, m.team2) }))
       .filter(x => x.video)
-      .slice(0, 6)
   }, [allFixtures, ytHighlights])
 
   // Next upcoming matches — sorted by date, only future or very-recent kickoffs
@@ -756,24 +756,10 @@ export default function Home() {
       {/* ── Highlights ── */}
       {matchHighlights.length > 0 && (
         <section className="mt-24">
-          <div className="section-header">
+          <div className="section-header mb-16">
             <h2 className="section-title"> <span>{t('home','highlights')}</span></h2>
           </div>
-          <div className="news-home-grid">
-            {matchHighlights.map(({ match, video }) => (
-              <article key={match.id} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                <YouTubeEmbed videoId={video.videoId} title={video.title} thumbnail={video.thumbnail} />
-                <div style={{ padding: '10px 12px' }}>
-                  <div className="fw-600" style={{ fontSize: 13, color: 'var(--text)', marginBottom: 2 }}>
-                    {match.team1} {match.score1}–{match.score2} {match.team2}
-                  </div>
-                  <div className="caption" style={{ fontSize: 11, color: 'var(--text3)' }}>
-                    {match.group}
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+          <HighlightsCarousel highlights={matchHighlights} lang={lang} />
         </section>
       )}
     </div>
