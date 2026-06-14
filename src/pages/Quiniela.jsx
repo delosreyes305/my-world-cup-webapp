@@ -24,7 +24,7 @@ function pad(n) { return String(n).padStart(2, '0') }
 
 function isLocked(matchDate) {
   if (!matchDate) return false
-  return new Date() >= new Date(matchDate)
+  return new Date() >= new Date(matchDate.replace(' ', 'T') + (matchDate.includes('Z') || matchDate.includes('+') ? '' : 'Z'))
 }
 
 function resultLabel(home, away, lang) {
