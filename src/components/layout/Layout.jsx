@@ -166,7 +166,7 @@ export default function Layout() {
         <div className="navbar-inner container">
 
           {/* Logo */}
-          <NavLink to="/" className="nav-logo" aria-label="My World Cup Home">
+          <NavLink to="/" className="nav-logo" aria-label="My World Cup Home" onClick={() => setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 50)}>
             <img src={logo} alt="My World Cup" style={{ height: 60, width: 'auto', display: 'block' }} />
           </NavLink>
 
