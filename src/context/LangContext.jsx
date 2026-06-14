@@ -13,6 +13,13 @@ const translations = {
       latest_news: 'Latest News', group_stage: 'Group Stage', ranking: 'Ranking',
       no_live: 'No live matches right now.', highlights: 'Highlights',
     },
+    stats: {
+      goals: 'Top Scorers', assists: 'Top Assists',
+      yellow: 'Most Yellow Cards', red: 'Most Red Cards', injuries: 'Injuries',
+      no_data: 'No data available yet. Check back after the first matches.',
+      no_injuries: 'No injuries reported for this tournament yet.',
+      out: 'Out', questionable: 'Questionable', doubtful: 'Doubtful', highlights: 'Highlights',
+    },
     common: {
       see_all: 'See all', teams: 'Teams', matches: 'Matches',
       venues: 'Venues', countries: 'Countries', loading: 'Loading...',
@@ -97,6 +104,13 @@ const translations = {
       live_today: 'En Vivo & Hoy', top_players: 'Mejores Jugadores',
       latest_news: 'Últimas Noticias', group_stage: 'Fase de Grupos', ranking: 'Ranking',
       no_live: 'No hay partidos en vivo ahora.', highlights: 'Resúmenes',
+    },
+    stats: {
+      goals: 'Goleadores', assists: 'Asistidores',
+      yellow: 'Más Tarjetas Amarillas', red: 'Más Tarjetas Rojas', injuries: 'Lesiones',
+      no_data: 'Aún no hay datos. Vuelve después de los primeros partidos.',
+      no_injuries: 'No hay lesiones reportadas para este torneo todavía.',
+      out: 'Fuera', questionable: 'Cuestionable', doubtful: 'Dudoso', highlights: 'Resúmenes',
     },
     common: {
       see_all: 'Ver todo', teams: 'Equipos', matches: 'Partidos',
