@@ -1117,3 +1117,29 @@ const MOCK_EVENTS = [
   { time: "71'",  type: 'subst', detail: 'Substitution', team: 'Team 2', player: 'Jugador' },
   { time: "78'",  type: 'Goal',  detail: 'Penalty',      team: 'Team 2', player: 'Jugador' },
 ]
+export async function getInjuries() {
+  if (isMock) return []
+  const data = await get(
+    `${BASE}/injuries?league=${WC_LEAGUE}&season=${WC_SEASON}`,
+    { headers }
+  )
+  const list = (data.response || [])
+    .map(raw => ({
+      id:     raw.player?.id,
+      name:   raw.player?.name || '',
+      photo:  raw.player?.photo || null,
+      nation: raw.team?.name || '',
+      type:   raw.player?.type || '',
+      reason: raw.player?.reason || '',
+      date:   raw.fixture?.date || null,
+    }))
+    .filter(p => p.id && p.name)
+  const byId = new Map()
+  for (const inj of list) {
+    const existing = byId.get(inj.id)
+    if (!existing || (inj.date && (!existing.date || inj.date > existing.date))) {
+      byId.set(inj.id, inj)
+    }
+  }
+  return [...byId.values()].sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+}
