@@ -986,12 +986,9 @@ function normalizeStandings(response) {
   const standings = response[0]?.league?.standings || []
   const groups = {}
   standings.forEach(group => {
-    // API now returns e.g. "Group Stage - Group A" instead of just "Group A".
-    // Take the text after the last " - " (or the whole string if no dash),
-    // then strip the "Group " prefix to get just the letter ("A", "B", ...).
     const rawGroup = group[0]?.group || ''
     const letter = rawGroup.split(' - ').pop()?.replace('Group ', '').trim() || '?'
-    groups[letter] = group.map(t => ({
+    const teams = group.map(t => ({
       flag: t.team.logo,
       name: t.team.name,
       mp:   t.all.played,
@@ -1002,6 +999,13 @@ function normalizeStandings(response) {
       ga:   t.all.goals.against,
       pts:  t.points,
     }))
+    // Deduplicate by team name — API sometimes returns duplicate entries
+    const seen = new Set()
+    groups[letter] = teams.filter(t => {
+      if (seen.has(t.name)) return false
+      seen.add(t.name)
+      return true
+    })
   })
   return groups
 }
