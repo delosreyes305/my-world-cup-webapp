@@ -5,6 +5,7 @@ import { useApp } from '../context/AppContext'
 import { useApi } from '../hooks/useApi'
 import { getAllTeamPlayers, searchPlayers, preloadTopSquads, getTeams, IS_MOCK, TEAM_ISO } from '../services/sportsService'
 import ApiStatus from '../components/common/ApiStatus'
+import PlayerLeaderboards from '../components/players/PlayerLeaderboards'
 
 const POSITIONS = ['All', 'FW', 'MF', 'DF', 'GK']
 
@@ -231,22 +232,7 @@ export default function Players() {
         </p>
       )}
 
-      {/* ── Prompt: select a country or type to search ── */}
-      {showPrompt && (
-        <div className="card" style={{ textAlign: 'center', padding: '48px 24px', color: 'var(--text3)' }}>
-          <div style={{ fontSize: 40, marginBottom: 16, color: 'var(--gold)' }}>
-            <i className="fa-solid fa-flag fa-xl" aria-hidden="true" />
-          </div>
-          <div className="fw-600" style={{ fontSize: 16, marginBottom: 8, color: 'var(--text)' }}>
-            {lang === 'es' ? 'Selecciona un país o busca un jugador' : 'Select a country or search for a player'}
-          </div>
-          <div style={{ fontSize: 14 }}>
-            {lang === 'es'
-              ? 'Elige una selección del filtro de arriba, o escribe el nombre de un jugador en el buscador.'
-              : 'Choose a team from the filter above, or type a player name in the search bar.'}
-          </div>
-        </div>
-      )}
+      {showPrompt && <PlayerLeaderboards />}
 
       {/* ── Player grid ── */}
       {!showPrompt && (
