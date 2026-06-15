@@ -122,7 +122,7 @@ export default function LiveMatch() {
     </div>
   )
 
-  const { team1, flag1, team2, flag2, score1, score2, status, time, group, venue, stadium } = match
+  const { team1, flag1, team2, flag2, score1, score2, status, time, group, venue, stadium, referee } = match
   const isLive = status === 'live'
   const isFT   = status === 'ft'
 
@@ -163,15 +163,15 @@ export default function LiveMatch() {
         }}>
           {/* Home */}
           <div style={{ flex: 1 }}>
-            <TeamFlag flag={flag1} name={team1} size={64} />
-            <h2 className="fw-600" style={{ fontSize: 18, lineHeight: 1.3 }}>{team1}</h2>
+            <TeamFlag flag={flag1} name={team1} size={52} />
+            <h2 className="fw-600" style={{ fontSize: 'clamp(12px, 3.5vw, 18px)', lineHeight: 1.3, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{team1}</h2>
           </div>
 
           {/* Score */}
           <div style={{ flexShrink: 0, textAlign: 'center' }}>
             <div style={{
               fontFamily: 'var(--font-display)',
-              fontSize: 64, letterSpacing: 6, lineHeight: 1, marginBottom: 4,
+              fontSize: 'clamp(36px, 14vw, 64px)', letterSpacing: 'clamp(2px, 1.5vw, 6px)', lineHeight: 1, marginBottom: 4,
             }}>
               <span style={{ color: score1 > score2 ? 'var(--gold)' : 'var(--text)' }}>
                 {score1 ?? 0}
@@ -186,12 +186,18 @@ export default function LiveMatch() {
                 {[venue, stadium].filter(Boolean).join(' · ')}
               </div>
             )}
+            {referee && (
+              <div className="caption" style={{ fontSize: 10, marginTop: 4, color: 'var(--text3)' }}>
+                <i className="fa-solid fa-whistle" style={{ marginRight: 4, opacity: 0.6 }} aria-hidden="true" />
+                {referee}
+              </div>
+            )}
           </div>
 
           {/* Away */}
           <div style={{ flex: 1 }}>
-            <TeamFlag flag={flag2} name={team2} size={64} />
-            <h2 className="fw-600" style={{ fontSize: 18, lineHeight: 1.3 }}>{team2}</h2>
+            <TeamFlag flag={flag2} name={team2} size={52} />
+            <h2 className="fw-600" style={{ fontSize: 'clamp(12px, 3.5vw, 18px)', lineHeight: 1.3, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{team2}</h2>
           </div>
         </div>
 
