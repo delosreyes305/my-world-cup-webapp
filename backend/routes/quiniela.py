@@ -531,6 +531,13 @@ def admin_recalculate_scores():
         return jsonify({'error': 'Unauthorized'}), 401
 
     from jobs.score_calculator import calculate_scores
-    calculate_scores(current_app._get_current_object())
+    import threading
+    app_ref = current_app._get_current_object()
+    def run():
+        try:
+            calculate_scores(app_ref)
+        except Exception as e:
+            print(f'[admin_recalculate] error: {e}')
+    threading.Thread(target=run, daemon=True).start()
 
     return jsonify({'message': 'Score recalculation triggered'}), 200
