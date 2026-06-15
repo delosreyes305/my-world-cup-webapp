@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useApp } from '../context/AppContext'
-import { useApiPolling } from '../hooks/useApi'
-import { getLiveMatches, getMatchStats, getMatchEvents } from '../services/sportsService'
+import { useApiPolling, useApi } from '../hooks/useApi'
+import { getLiveMatches, getMatchStats, getMatchEvents, getCoach, TEAM_ISO } from '../services/sportsService'
 import { MATCHES } from '../data/mockData'
 
 // ─── Dual-color stat bar (gold=home · blue=away) ────────
@@ -122,7 +122,10 @@ export default function LiveMatch() {
     </div>
   )
 
-  const { team1, flag1, team2, flag2, score1, score2, status, time, group, venue, stadium, referee } = match
+  const { team1, flag1, team2, flag2, score1, score2, status, time, group, venue, stadium, referee, team1Id, team2Id } = match
+
+  const { data: coach1 } = useApi(getCoach, team1Id, { ttl: 86_400_000, skip: !team1Id })
+  const { data: coach2 } = useApi(getCoach, team2Id, { ttl: 86_400_000, skip: !team2Id })
   const isLive = status === 'live'
   const isFT   = status === 'ft'
 
@@ -145,7 +148,7 @@ export default function LiveMatch() {
           {isLive ? (
             <div className="flex-center gap-6"
               style={{ color: 'var(--red)', fontWeight: 700, fontSize: 13 }}>
-              <span className="live-dot" aria-hidden="true" />
+              <i className="fa-solid fa-circle" style={{ fontSize: 7, color: 'var(--red)', marginRight: 2 }} aria-hidden="true" />
               {t('common', 'live')} {time}
             </div>
           ) : isFT ? (
@@ -162,7 +165,7 @@ export default function LiveMatch() {
           textAlign: 'center', marginBottom: 16,
         }}>
           {/* Home */}
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <TeamFlag flag={flag1} name={team1} size={52} />
             <h2 className="fw-600" style={{ fontSize: 'clamp(12px, 3.5vw, 18px)', lineHeight: 1.3, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{team1}</h2>
           </div>
@@ -195,14 +198,14 @@ export default function LiveMatch() {
           </div>
 
           {/* Away */}
-          <div style={{ flex: 1 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <TeamFlag flag={flag2} name={team2} size={52} />
             <h2 className="fw-600" style={{ fontSize: 'clamp(12px, 3.5vw, 18px)', lineHeight: 1.3, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{team2}</h2>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-8 flex-wrap">
+        <div className="flex gap-8 flex-wrap" style={{ justifyContent: 'center' }}>
           <button
             className={`btn btn-sm ${isFav('matches', match.id) ? 'btn-gold' : 'btn-outline'}`}
             onClick={() => toggleFav('matches', { ...match, name: `${team1} vs ${team2}` })}
@@ -286,6 +289,44 @@ export default function LiveMatch() {
           )}
         </div>
       </div>
+
+
+      {/* ── Coaches ── */}
+      {(coach1 || coach2) && (
+        <div className="card mb-16">
+          <h3 className="fw-600 mb-16" style={{ fontSize: 15 }}>
+            <i className="fa-solid fa-person-chalkboard" style={{ color: 'var(--gold)', marginRight: 8 }} aria-hidden="true" />
+            {lang === 'es' ? 'Directores Técnicos' : 'Head Coaches'}
+          </h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            {[{ coach: coach1, team: team1, flag: flag1 }, { coach: coach2, team: team2, flag: flag2 }].map(({ coach, team, flag }, i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 8px', background: 'var(--card2)', borderRadius: 10, border: '1px solid var(--border)' }}>
+                {coach?.photo ? (
+                  <img src={coach.photo} alt={coach.name}
+                    style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border)' }}
+                    onError={e => { e.target.style.display = 'none' }}
+                  />
+                ) : (
+                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <i className="fa-solid fa-user" style={{ fontSize: 22, color: 'var(--text3)' }} aria-hidden="true" />
+                  </div>
+                )}
+                <div style={{ textAlign: 'center', minWidth: 0 }}>
+                  <div className="fw-600" style={{ fontSize: 12, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {coach?.name || '—'}
+                  </div>
+                  <div className="caption" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>
+                    {coach?.nationality || ''}
+                  </div>
+                  <div className="caption" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>
+                    {team}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Full time banner ── */}
       {isFT && (
