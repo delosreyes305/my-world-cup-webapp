@@ -465,12 +465,21 @@ function LeaderboardTable({ board, lang, onViewUser }) {
 
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {entry.alias}
+              display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {entry.alias}
+              </span>
               {entry.is_me && (
-                <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--gold)' }}>
-                  {lang === 'es' ? '(yo)' : '(me)'}
+                <span style={{ fontSize: 10, color: 'var(--gold)', flexShrink: 0 }}>
+                  ({lang === 'es' ? 'yo' : 'me'})
                 </span>
+              )}
+              {!entry.is_me && entry.user_id && onViewUser && (
+                <button onClick={() => onViewUser({ userId: entry.user_id, alias: entry.alias })}
+                  style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 12, padding: '0 2px', flexShrink: 0 }}
+                  title={lang === 'es' ? 'Ver predicciones' : 'View predictions'}>
+                  <i className="fa-solid fa-eye" aria-hidden="true" />
+                </button>
               )}
             </div>
             <div style={{ fontSize: 10, color: 'var(--text3)' }}>
@@ -479,21 +488,13 @@ function LeaderboardTable({ board, lang, onViewUser }) {
             </div>
           </div>
 
-          <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--gold)', lineHeight: 1 }}>
-                {entry.total_points}
-              </div>
-              <div style={{ fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                pts
-              </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--gold)', lineHeight: 1 }}>
+              {entry.total_points}
             </div>
-            {!entry.is_me && entry.user_id && onViewUser && (
-              <button onClick={() => onViewUser({ userId: entry.user_id, alias: entry.alias })}
-                style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 4 }}>
-                <i className="fa-solid fa-eye" aria-hidden="true" style={{ fontSize: 14 }} />
-              </button>
-            )}
+            <div style={{ fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              pts
+            </div>
           </div>
         </div>
       ))}
@@ -1127,7 +1128,7 @@ export default function Quiniela() {
 
   const [profile,     setProfile]     = useState(undefined) // undefined = loading
   const [predictions, setPredictions] = useState([])
-  const [activeTab,   setActiveTab]   = useState('predict')
+  const [activeTab,   setActiveTab]   = useState(() => localStorage.getItem('quiniela_tab') || 'predict')
   const [editingAlias, setEditingAlias] = useState(false)
   const [newAlias,     setNewAlias]     = useState("")
   const [newColor,     setNewColor]     = useState("")
@@ -1272,7 +1273,7 @@ export default function Quiniela() {
           <button
             key={tab.key}
             className={`tab${activeTab === tab.key ? ' active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => { setActiveTab(tab.key); localStorage.setItem('quiniela_tab', tab.key) }}
           >
             <i className={tab.icon} style={{ marginRight: 6 }} />
             {tab.label}
