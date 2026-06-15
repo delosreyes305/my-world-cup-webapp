@@ -24,7 +24,7 @@ function pad(n) { return String(n).padStart(2, '0') }
 
 function isLocked(matchDate) {
   if (!matchDate) return false
-  return new Date() >= new Date(matchDate.replace(' ', 'T') + (matchDate.includes('Z') || matchDate.includes('+') ? '' : 'Z'))
+  return new Date() >= new Date(matchDate)
 }
 
 function resultLabel(home, away, lang) {
@@ -478,13 +478,21 @@ function LeaderboardTable({ board, lang }) {
             </div>
           </div>
 
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--gold)', lineHeight: 1 }}>
-              {entry.total_points}
+          <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--gold)', lineHeight: 1 }}>
+                {entry.total_points}
+              </div>
+              <div style={{ fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                pts
+              </div>
             </div>
-            <div style={{ fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-              pts
-            </div>
+            {!entry.is_me && entry.user_id && onViewUser && (
+              <button onClick={() => onViewUser({ userId: entry.user_id, alias: entry.alias })}
+                style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 4 }}>
+                <i className="fa-solid fa-eye" aria-hidden="true" style={{ fontSize: 14 }} />
+              </button>
+            )}
           </div>
         </div>
       ))}
@@ -495,7 +503,7 @@ function LeaderboardTable({ board, lang }) {
 // ─────────────────────────────────────────────────────────────────────
 // MY PREDICTIONS — history of past (locked) predictions with results
 // ─────────────────────────────────────────────────────────────────────
-function MyPredictionsTab({ predictions, lang }) {
+function MyPredictionsTab({ predictions, lang, navigate }) {
   const past = (predictions || [])
     .filter(p => isLocked(p.match_date))
     .sort((a, b) => new Date(b.match_date) - new Date(a.match_date)) // most recent first
@@ -538,8 +546,8 @@ function MyPredictionsTab({ predictions, lang }) {
         }
 
         return (
-          <div key={p.id} className="card" style={{
-            padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10,
+          <div key={p.id} className="card card-clickable" onClick={() => navigate(`/matches/${p.fixture_id}`)} style={{
+            padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
           }}>
             {/* Date */}
             <div style={{ fontSize: 10, color: 'var(--text3)', flexShrink: 0, minWidth: 38, textAlign: 'center' }}>
@@ -596,7 +604,7 @@ function MyPredictionsTab({ predictions, lang }) {
 // ─────────────────────────────────────────────────────────────────────
 // GLOBAL LEADERBOARD TAB
 // ─────────────────────────────────────────────────────────────────────
-function GlobalTab({ token, lang, myProfile }) {
+function GlobalTab({ token, lang, myProfile, onViewUser }) {
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -1288,10 +1296,10 @@ export default function Quiniela() {
         />
       )}
       {activeTab === 'history' && (
-        <MyPredictionsTab predictions={predictions} lang={lang} />
+        <MyPredictionsTab predictions={predictions} lang={lang} navigate={navigate} />
       )}
       {activeTab === 'global' && (
-        <GlobalTab token={token} lang={lang} myProfile={profile} />
+        <GlobalTab token={token} lang={lang} myProfile={profile} onViewUser={setViewingMember} />
       )}
       {activeTab === 'leagues' && (
         <LeaguesTab token={token} lang={lang} userId={user.id} />

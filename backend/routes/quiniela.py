@@ -257,6 +257,7 @@ def global_leaderboard():
             'correct_scores':   p.correct_scores,
             'predictions_count': p.predictions_count,
             'is_me':            p.user_id == user_id,
+            'user_id':          p.user_id,
         })
  
     return jsonify({
@@ -530,14 +531,15 @@ def admin_recalculate_scores():
     if not secret or request.headers.get('X-Admin-Secret') != secret:
         return jsonify({'error': 'Unauthorized'}), 401
 
-    from jobs.score_calculator import calculate_scores
-    import threading
-    app_ref = current_app._get_current_object()
-    def run():
-        try:
-            calculate_scores(app_ref)
-        except Exception as e:
-            print(f'[admin_recalculate] error: {e}')
-    threading.Thread(target=run, daemon=True).start()
+    try:
+        from jobs.score_calculator import calculate_scores
+        print('[admin_recalculate] Starting score calculation...')
+        calculate_scores(current_app._get_current_object())
+        print('[admin_recalculate] Score calculation completed.')
+    except Exception as e:
+        print(f'[admin_recalculate] ERROR: {e}')
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
     return jsonify({'message': 'Score recalculation triggered'}), 200
