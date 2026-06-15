@@ -949,6 +949,7 @@ function normalizeFixture(raw) {
     venue:   stadiumName,   // stadium building name
     stadium: city,          // city / location  (field kept as 'stadium' for compat)
     date:    f.date,
+    referee: f.referee || null,
   }
 }
 
