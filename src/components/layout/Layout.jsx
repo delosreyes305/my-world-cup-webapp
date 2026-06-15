@@ -229,6 +229,7 @@ export default function Layout() {
             to={item.path}
             end={item.path === '/'}
             className={({ isActive }) => `bottom-nav-link${isActive ? ' active' : ''}`}
+            onClick={item.path === '/' ? () => setTimeout(() => window.scrollTo({ top: 0, behavior: 'instant' }), 50) : undefined}
           >
             <span className="bottom-nav-icon">{item.icon}</span>
             <span className="bottom-nav-label">{t('nav', item.key)}</span>
