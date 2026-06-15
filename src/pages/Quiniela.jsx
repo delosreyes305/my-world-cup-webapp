@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useAuth } from '../context/AuthContext'
@@ -670,7 +671,7 @@ function GlobalMemberModal({ token, lang, userId, alias, onClose }) {
       .then(d => setPreds(d.predictions || []))
       .catch(() => setPreds([]))
   }, [userId, token])
-  return (
+  return createPortal(
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 }} onClick={onClose}>
       <div style={{ background: 'var(--card)', borderRadius: '16px 16px 0 0', padding: '20px 16px', width: '100%', maxWidth: 480, maxHeight: '80vh', overflowY: 'auto' }} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -697,7 +698,8 @@ function GlobalMemberModal({ token, lang, userId, alias, onClose }) {
               ))
         }
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
