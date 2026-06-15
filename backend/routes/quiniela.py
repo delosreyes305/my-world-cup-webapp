@@ -257,6 +257,7 @@ def global_leaderboard():
             'correct_scores':   p.correct_scores,
             'predictions_count': p.predictions_count,
             'is_me':            p.user_id == user_id,
+            'user_id':          p.user_id,
         })
  
     return jsonify({
@@ -514,6 +515,20 @@ def league_champions(league_id):
             league_champs[champ.phase] = champ.to_dict()
 
     return jsonify({'champions': league_champs}), 200
+
+
+@quiniela_bp.route('/member/<int:target_user_id>/predictions', methods=['GET'])
+@jwt_required()
+def get_global_member_predictions(target_user_id):
+    """View another user's locked predictions globally."""
+    preds = (
+        Prediction.query
+        .filter_by(user_id=target_user_id)
+        .order_by(Prediction.match_date.desc())
+        .all()
+    )
+    return jsonify({'predictions': [p.to_dict() for p in preds]}), 200
+
 
 # ── Admin: force score recalculation ───────────────────────────────────
 @quiniela_bp.route('/admin/recalculate-scores', methods=['POST'])
