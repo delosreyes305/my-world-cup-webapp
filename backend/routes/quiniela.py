@@ -516,6 +516,20 @@ def league_champions(league_id):
 
     return jsonify({'champions': league_champs}), 200
 
+
+@quiniela_bp.route('/member/<int:target_user_id>/predictions', methods=['GET'])
+@jwt_required()
+def get_global_member_predictions(target_user_id):
+    """View another user's locked predictions — available globally."""
+    preds = (
+        Prediction.query
+        .filter_by(user_id=target_user_id)
+        .order_by(Prediction.match_date.desc())
+        .all()
+    )
+    return jsonify({'predictions': [p.to_dict() for p in preds]}), 200
+
+
 # ── Admin: force score recalculation ───────────────────────────────────
 @quiniela_bp.route('/admin/recalculate-scores', methods=['POST'])
 def admin_recalculate_scores():
