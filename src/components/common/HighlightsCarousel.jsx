@@ -12,11 +12,13 @@ export default function HighlightsCarousel({ highlights, lang }) {
   const startX    = useRef(null)
   const total     = highlights.length
 
-  // Scroll the track to the current slide
+  // Scroll the track to the current slide without affecting page scroll
   useEffect(() => {
     if (!trackRef.current) return
     const card = trackRef.current.children[current]
-    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+    if (card) {
+      trackRef.current.scrollTo({ left: card.offsetLeft, behavior: 'smooth' })
+    }
   }, [current])
 
   const prev = () => setCurrent(c => Math.max(0, c - 1))
