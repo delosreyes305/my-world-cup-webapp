@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useApp } from '../context/AppContext'
 import { useApiPolling, useApi } from '../hooks/useApi'
-import { getLiveMatches, getMatchStats, getMatchEvents, getCoach, TEAM_ISO } from '../services/sportsService'
+import { getLiveMatches, getMatchStats, getMatchEvents, getCoach, getHeadToHead, TEAM_ISO } from '../services/sportsService'
 import { MATCHES } from '../data/mockData'
 
 // ─── Dual-color stat bar (gold=home · blue=away) ────────
@@ -126,6 +126,13 @@ export default function LiveMatch() {
 
   const { data: coach1 } = useApi(getCoach, team1Id, { ttl: 86_400_000, skip: !team1Id })
   const { data: coach2 } = useApi(getCoach, team2Id, { ttl: 86_400_000, skip: !team2Id })
+
+  const h2hKey = team1Id && team2Id ? `${team1Id}-${team2Id}` : null
+  const { data: h2h, loading: h2hLoad } = useApi(
+    () => getHeadToHead(team1Id, team2Id, 5),
+    h2hKey,
+    { skip: !h2hKey, ttl: 86_400_000 }
+  )
   const isLive = status === 'live'
   const isFT   = status === 'ft'
 
@@ -290,6 +297,59 @@ export default function LiveMatch() {
         </div>
       </div>
 
+
+      {/* ── Head to Head ── */}
+      {(h2hLoad || (h2h && h2h.length > 0)) && (
+        <div className="card mb-16">
+          <h3 className="fw-600 mb-16" style={{ fontSize: 15 }}>
+            <i className="fa-solid fa-shield-halved" style={{ marginRight: 8, color: 'var(--gold)' }} aria-hidden="true" />
+            {lang === 'es' ? 'Historial de enfrentamientos' : 'Head to Head'}
+          </h3>
+          {h2hLoad ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[1,2,3].map(i => <div key={i} className="skeleton" style={{ height: 36, borderRadius: 6 }} />)}
+            </div>
+          ) : (
+            <>
+              {(() => {
+                const t1Wins = h2h.filter(m => m.winner === team1).length
+                const t2Wins = h2h.filter(m => m.winner === team2).length
+                const draws  = h2h.filter(m => m.winner === 'Draw').length
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 16 }}>
+                    {[
+                      { label: team1, val: t1Wins, color: 'var(--gold)' },
+                      { label: lang === 'es' ? 'Empates' : 'Draws', val: draws, color: 'var(--text3)' },
+                      { label: team2, val: t2Wins, color: 'var(--electric)' },
+                    ].map(({ label, val, color }) => (
+                      <div key={label} style={{ textAlign: 'center', background: 'var(--card2)', borderRadius: 8, padding: '10px 8px', border: '0.5px solid var(--border)' }}>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, color, lineHeight: 1, marginBottom: 4 }}>{val}</div>
+                        <div className="caption" style={{ fontSize: 10, color: 'var(--text3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {h2h.map((m, i) => {
+                  const isT1Win = m.winner === team1
+                  const isT2Win = m.winner === team2
+                  const isDraw  = m.winner === 'Draw'
+                  const year    = m.date ? new Date(m.date).getFullYear() : ''
+                  return (
+                    <div key={m.id || i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 8, background: 'var(--card2)', border: '0.5px solid var(--border)' }}>
+                      <span className="caption" style={{ fontSize: 10, color: 'var(--text3)', flexShrink: 0, minWidth: 32 }}>{year}</span>
+                      <span style={{ flex: 1, fontSize: 12, textAlign: 'right', fontWeight: isT1Win ? 700 : 400, color: isT1Win ? 'var(--gold)' : 'var(--text)' }}>{m.home}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, flexShrink: 0, minWidth: 48, textAlign: 'center', color: isDraw ? 'var(--text3)' : isT1Win ? 'var(--gold)' : 'var(--electric)' }}>{m.score ?? 'vs'}</span>
+                      <span style={{ flex: 1, fontSize: 12, textAlign: 'left', fontWeight: isT2Win ? 700 : 400, color: isT2Win ? 'var(--electric)' : 'var(--text)' }}>{m.away}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── Coaches ── */}
       {(coach1 || coach2) && (
