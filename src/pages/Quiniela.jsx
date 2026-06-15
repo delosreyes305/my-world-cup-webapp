@@ -1,4 +1,4 @@
- import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useAuth } from '../context/AuthContext'
@@ -825,7 +825,6 @@ function LeaguesTab({ token, lang, userId }) {
   const [selectedLeague, setSelectedLeague] = useState(null)
   const [leagueBoard,   setLeagueBoard]   = useState(null)
   const [viewingMember, setViewingMember] = useState(null)
-  const [globalViewingMember, setGlobalViewingMember] = useState(null)
   const [copied,        setCopied]        = useState(false)
   const [creating,      setCreating]      = useState(false)
   const [joining,       setJoining]       = useState(false)
@@ -1132,6 +1131,7 @@ export default function Quiniela() {
   const [newColor,     setNewColor]     = useState("")
   const [editError,    setEditError]    = useState("")
   const [editSaving,   setEditSaving]   = useState(false)
+  const [globalViewingMember, setGlobalViewingMember] = useState(null)
 
   const tabs = [
     { key: 'predict',  label: lang === 'es' ? 'Predecir'   : 'Predict',   icon: 'fa-solid fa-pen-to-square' },
@@ -1348,6 +1348,9 @@ export default function Quiniela() {
       )}
       {activeTab === 'leagues' && (
         <LeaguesTab token={token} lang={lang} userId={user.id} />
+      )}
+      {globalViewingMember && (
+        <GlobalMemberModal token={token} lang={lang} userId={globalViewingMember.userId} alias={globalViewingMember.alias} onClose={() => setGlobalViewingMember(null)} />
       )}
     </div>
   )
