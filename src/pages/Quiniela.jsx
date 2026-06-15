@@ -24,7 +24,7 @@ function pad(n) { return String(n).padStart(2, '0') }
 
 function isLocked(matchDate) {
   if (!matchDate) return false
-  return new Date() >= new Date(matchDate)
+  return new Date() >= new Date(matchDate.replace(' ', 'T') + (matchDate.includes('Z') || matchDate.includes('+') ? '' : 'Z'))
 }
 
 function resultLabel(home, away, lang) {
@@ -431,7 +431,7 @@ function PredictTab({ token, lang, predictions, onPredictionSaved }) {
 // ─────────────────────────────────────────────────────────────────────
 // LEADERBOARD ROW
 // ─────────────────────────────────────────────────────────────────────
-function LeaderboardTable({ board, lang, onViewUser }) {
+function LeaderboardTable({ board, lang }) {
   if (!board?.length) return (
     <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text3)', fontSize: 13 }}>
       {lang === 'es' ? 'Aún no hay participantes.' : 'No participants yet.'}
@@ -478,21 +478,13 @@ function LeaderboardTable({ board, lang, onViewUser }) {
             </div>
           </div>
 
-          <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--gold)', lineHeight: 1 }}>
-                {entry.total_points}
-              </div>
-              <div style={{ fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                pts
-              </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--gold)', lineHeight: 1 }}>
+              {entry.total_points}
             </div>
-            {!entry.is_me && entry.user_id && onViewUser && (
-              <button onClick={() => onViewUser({ userId: entry.user_id, alias: entry.alias })}
-                style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 4 }}>
-                <i className="fa-solid fa-eye" aria-hidden="true" style={{ fontSize: 14 }} />
-              </button>
-            )}
+            <div style={{ fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              pts
+            </div>
           </div>
         </div>
       ))}
@@ -503,7 +495,7 @@ function LeaderboardTable({ board, lang, onViewUser }) {
 // ─────────────────────────────────────────────────────────────────────
 // MY PREDICTIONS — history of past (locked) predictions with results
 // ─────────────────────────────────────────────────────────────────────
-function MyPredictionsTab({ predictions, lang, navigate }) {
+function MyPredictionsTab({ predictions, lang }) {
   const past = (predictions || [])
     .filter(p => isLocked(p.match_date))
     .sort((a, b) => new Date(b.match_date) - new Date(a.match_date)) // most recent first
@@ -546,8 +538,8 @@ function MyPredictionsTab({ predictions, lang, navigate }) {
         }
 
         return (
-          <div key={p.id} className="card card-clickable" onClick={() => navigate(`/matches/${p.fixture_id}`)} style={{
-            padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
+          <div key={p.id} className="card" style={{
+            padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 10,
           }}>
             {/* Date */}
             <div style={{ fontSize: 10, color: 'var(--text3)', flexShrink: 0, minWidth: 38, textAlign: 'center' }}>
@@ -604,7 +596,7 @@ function MyPredictionsTab({ predictions, lang, navigate }) {
 // ─────────────────────────────────────────────────────────────────────
 // GLOBAL LEADERBOARD TAB
 // ─────────────────────────────────────────────────────────────────────
-function GlobalTab({ token, lang, myProfile, onViewUser }) {
+function GlobalTab({ token, lang, myProfile }) {
   const [data,    setData]    = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -649,7 +641,7 @@ function GlobalTab({ token, lang, myProfile, onViewUser }) {
 
       {loading
         ? [1,2,3,4,5].map(i => <div key={i} className="skeleton mb-6" style={{ height: 56, borderRadius: 10 }} />)
-        : <LeaderboardTable board={data?.leaderboard} lang={lang} onViewUser={onViewUser} />
+        : <LeaderboardTable board={data?.leaderboard} lang={lang} />
       }
     </div>
   )
@@ -657,69 +649,6 @@ function GlobalTab({ token, lang, myProfile, onViewUser }) {
 
 // ─────────────────────────────────────────────────────────────────────
 // PRIVATE LEAGUES TAB
-// ─────────────────────────────────────────────────────────────────────
-// GLOBAL USER PREDICTIONS MODAL (no leagueId needed)
-// ─────────────────────────────────────────────────────────────────────
-function GlobalMemberModal({ token, lang, userId, alias, onClose }) {
-  const [preds, setPreds] = useState(null)
-
-  useEffect(() => {
-    fetch(`/api/quiniela/member/${userId}/predictions`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    })
-      .then(r => r.json())
-      .then(d => setPreds(d.predictions || []))
-      .catch(() => setPreds([]))
-  }, [userId, token])
-
-  return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000,
-    }} onClick={onClose}>
-      <div style={{
-        background: 'var(--card)', borderRadius: '16px 16px 0 0',
-        padding: '20px 16px', width: '100%', maxWidth: 480,
-        maxHeight: '80vh', overflowY: 'auto',
-      }} onClick={e => e.stopPropagation()}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>
-            {lang === 'es' ? `Predicciones de ${alias}` : `${alias}'s predictions`}
-          </h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 18 }}>
-            <i className="fa-solid fa-xmark" />
-          </button>
-        </div>
-        {!preds
-          ? [1,2,3].map(i => <div key={i} className="skeleton mb-6" style={{ height: 40, borderRadius: 8 }} />)
-          : !preds.length
-            ? <p style={{ color: 'var(--text3)', fontSize: 13, textAlign: 'center', padding: '20px 0' }}>
-                {lang === 'es' ? 'Sin predicciones disponibles aún.' : 'No predictions available yet.'}
-              </p>
-            : preds.filter(p => p.is_locked).map(p => (
-                <div key={p.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '8px 12px', borderRadius: 8, marginBottom: 6,
-                  background: 'var(--card2)', border: '1px solid var(--border)',
-                }}>
-                  <span style={{ flex: 1, fontSize: 12, color: 'var(--text)', textAlign: 'right' }}>{p.team1}</span>
-                  <span style={{ fontWeight: 700, color: 'var(--gold)', fontSize: 14, minWidth: 48, textAlign: 'center' }}>
-                    {p.pred_home} – {p.pred_away}
-                  </span>
-                  <span style={{ flex: 1, fontSize: 12, color: 'var(--text)' }}>{p.team2}</span>
-                  {p.score && (
-                    <span style={{ fontSize: 11, color: p.score.points > 0 ? 'var(--green)' : 'var(--text3)', flexShrink: 0 }}>
-                      +{p.score.points}
-                    </span>
-                  )}
-                </div>
-              ))
-        }
-      </div>
-    </div>
-  )
-}
-
 // ─────────────────────────────────────────────────────────────────────
 function MemberPredictionsModal({ token, lang, leagueId, userId, alias, onClose }) {
   const [preds, setPreds] = useState(null)
@@ -844,7 +773,6 @@ function LeaguesTab({ token, lang, userId }) {
   const [selectedLeague, setSelectedLeague] = useState(null)
   const [leagueBoard,   setLeagueBoard]   = useState(null)
   const [viewingMember, setViewingMember] = useState(null)
-  const [globalViewingMember, setGlobalViewingMember] = useState(null)
   const [copied,        setCopied]        = useState(false)
   const [creating,      setCreating]      = useState(false)
   const [joining,       setJoining]       = useState(false)
@@ -957,15 +885,7 @@ function LeaguesTab({ token, lang, userId }) {
 {/* League champions */}
 <LeagueChampionsBanner token={token} leagueId={selectedLeague.id} lang={lang} />
 
-{globalViewingMember && (
-        <GlobalMemberModal
-          token={token} lang={lang}
-          userId={globalViewingMember.userId}
-          alias={globalViewingMember.alias}
-          onClose={() => setGlobalViewingMember(null)}
-        />
-      )}
-      {viewingMember && (
+{viewingMember && (
   <MemberPredictionsModal
     token={token}
     lang={lang}
@@ -1368,10 +1288,10 @@ export default function Quiniela() {
         />
       )}
       {activeTab === 'history' && (
-        <MyPredictionsTab predictions={predictions} lang={lang} navigate={navigate} />
+        <MyPredictionsTab predictions={predictions} lang={lang} />
       )}
       {activeTab === 'global' && (
-        <GlobalTab token={token} lang={lang} myProfile={profile} onViewUser={setGlobalViewingMember} />
+        <GlobalTab token={token} lang={lang} myProfile={profile} />
       )}
       {activeTab === 'leagues' && (
         <LeaguesTab token={token} lang={lang} userId={user.id} />
