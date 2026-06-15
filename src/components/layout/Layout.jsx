@@ -19,6 +19,7 @@ const NAV_ITEMS = [
   { path: '/players',   key: 'players',   icon: <i className="fa-solid fa-users"          aria-hidden="true" /> },
   { path: '/bracket',   key: 'bracket',   icon: <i className="fa-solid fa-sitemap"        aria-hidden="true" /> },
   { path: '/news',      key: 'news',      icon: <i className="fa-solid fa-newspaper"      aria-hidden="true" /> },
+  { path: '/highlights', key: 'highlights', icon: <i className="fa-solid fa-circle-play"    aria-hidden="true" /> },
   { path: '/quiniela',  key: 'quiniela',  icon: <i className="fa-solid fa-trophy"         aria-hidden="true" /> },
   { path: '/ranking',   key: 'ranking',   icon: <i className="fa-solid fa-ranking-star"   aria-hidden="true" /> },
   { path: '/trivia',    key: 'trivia',    icon: <i className="fa-solid fa-brain"          aria-hidden="true" /> },
