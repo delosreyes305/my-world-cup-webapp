@@ -342,6 +342,9 @@ export default function Home() {
   const [activeGroup, setActiveGroup] = React.useState('A')
   const [reading, setReading]         = useState(null)
 
+  // Always start at top when Home mounts (prevents browser restoring scroll position)
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' }) }, [])
+
   const { data: liveMatches, loading: liveLoad } = useApiPolling(getLiveMatches, 30_000)
   const { data: standings  }                      = useApi(getStandings,   { ttl: 3_600_000 })
   const { data: allTeams   }                      = useApi(getTeams,       { ttl: 3_600_000 })
