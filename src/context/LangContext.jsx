@@ -5,7 +5,7 @@ const translations = {
     nav: {
       home: 'Home', matches: 'Matches', teams: 'Teams', players: 'Players',
       bracket: 'Groups', news: 'News', trivia: 'Trivia',
-      predict: 'AI Predict', favorites: 'Favorites', ranking: 'Ranking', about: 'About', quiniela: 'Quiniela',
+      predict: 'AI Predict', favorites: 'Favorites', ranking: 'Ranking', about: 'About', quiniela: 'Quiniela', highlights: 'Highlights',
     },
     home: {
       hero_sub: 'Your ultimate companion for the greatest football tournament on Earth',
@@ -97,7 +97,7 @@ const translations = {
     nav: {
       home: 'Inicio', matches: 'Partidos', teams: 'Equipos', players: 'Jugadores',
       bracket: 'Grupos', news: 'Noticias', trivia: 'Trivia',
-      predict: 'IA Predictor', favorites: 'Favoritos', ranking: 'Ranking', about: 'Acerca', quiniela: 'Quiniela',
+      predict: 'IA Predictor', favorites: 'Favoritos', ranking: 'Ranking', about: 'Acerca', quiniela: 'Quiniela', highlights: 'Resúmenes',
     },
     home: {
       hero_sub: 'Tu compañero definitivo para el torneo de fútbol más grande del planeta',
