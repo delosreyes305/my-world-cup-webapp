@@ -566,8 +566,10 @@ def admin_score_debug():
     if not secret or request.headers.get('X-Admin-Secret') != secret:
         return jsonify({'error': 'Unauthorized'}), 401
 
-    from jobs.score_calculator import _fetch_fixture, FINISHED
+    from jobs.score_calculator import _fetch_fixture, FINISHED, API_KEY
     from datetime import datetime
+
+    key_preview = (API_KEY[:4] + '...' + API_KEY[-4:]) if len(API_KEY) > 8 else ('<empty>' if not API_KEY else API_KEY)
 
     unscored = (
         db.session.query(Prediction)
@@ -604,6 +606,7 @@ def admin_score_debug():
 
     return jsonify({
         'now_utc': now.isoformat(),
+        'api_key_loaded_in_module': key_preview,
         'total_unscored_predictions': len(unscored),
         'total_unscored_fixtures': len(by_fixture),
         'fixtures': details,
