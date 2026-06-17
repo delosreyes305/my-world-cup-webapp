@@ -21,7 +21,6 @@ from models import (
 from extensions import db
 
 API_BASE  = 'https://v3.football.api-sports.io'
-API_KEY   = os.getenv('VITE_FOOTBALL_API_KEY', '')
 WC_LEAGUE = 1
 WC_SEASON = 2026
 FINISHED  = {'FT', 'AET', 'PEN'}
@@ -38,13 +37,14 @@ def _is_group_fixture(round_str: str) -> bool:
 
 
 def _fetch_all_fixtures() -> list:
-    if not API_KEY or API_KEY == 'TU_CLAVE_AQUI':
+    api_key = os.getenv('FOOTBALL_API_KEY', '')
+    if not api_key or api_key == 'TU_CLAVE_AQUI':
         return []
     try:
         resp = requests.get(
             f'{API_BASE}/fixtures',
             params={'league': WC_LEAGUE, 'season': WC_SEASON},
-            headers={'x-apisports-key': API_KEY},
+            headers={'x-apisports-key': api_key},
             timeout=15,
         )
         return resp.json().get('response', [])

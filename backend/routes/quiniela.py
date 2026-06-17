@@ -569,7 +569,7 @@ def admin_score_debug():
     from jobs.score_calculator import _fetch_fixture, FINISHED
     from datetime import datetime
 
-    _key = os.getenv('VITE_FOOTBALL_API_KEY', '')
+    _key = os.getenv('FOOTBALL_API_KEY', '')
     key_preview = (_key[:4] + '...' + _key[-4:]) if len(_key) > 8 else ('<empty>' if not _key else _key)
 
     unscored = (

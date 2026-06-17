@@ -24,9 +24,9 @@ FINISHED    = {'FT', 'AET', 'PEN'}
 
 def _fetch_fixture(fixture_id: int):
     """Fetch a single fixture from API-Football."""
-    api_key = os.getenv('VITE_FOOTBALL_API_KEY', '')
+    api_key = os.getenv('FOOTBALL_API_KEY', '')
     if not api_key or api_key == 'TU_CLAVE_AQUI':
-        print('[score_calculator] VITE_FOOTBALL_API_KEY is empty — cannot fetch fixture')
+        print('[score_calculator] FOOTBALL_API_KEY is empty — cannot fetch fixture')
         return None
     try:
         resp = requests.get(
