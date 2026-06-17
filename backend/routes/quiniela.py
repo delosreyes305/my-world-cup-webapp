@@ -546,13 +546,65 @@ def admin_recalculate_scores():
         return jsonify({'error': 'Unauthorized'}), 401
 
     from jobs.score_calculator import calculate_scores
-    import threading
-    app_ref = current_app._get_current_object()
-    def run():
-        try:
-            calculate_scores(app_ref)
-        except Exception as e:
-            print(f'[admin_recalculate] error: {e}')
-    threading.Thread(target=run, daemon=True).start()
+    try:
+        result = calculate_scores(current_app._get_current_object())
+        return jsonify({'message': 'Score recalculation completed', 'result': result}), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
-    return jsonify({'message': 'Score recalculation triggered'}), 200
+
+@quiniela_bp.route('/admin/score-debug', methods=['GET'])
+def admin_score_debug():
+    """
+    Diagnostic: shows exactly what calculate_scores() would see right now —
+    how many predictions are unscored, which fixtures they belong to, and
+    what API-Football returns for each. No side effects (read-only).
+    """
+    secret = os.getenv('ADMIN_SECRET', '')
+    if not secret or request.headers.get('X-Admin-Secret') != secret:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    from jobs.score_calculator import _fetch_fixture, FINISHED
+    from datetime import datetime
+
+    unscored = (
+        db.session.query(Prediction)
+        .outerjoin(PredictionScore, Prediction.id == PredictionScore.prediction_id)
+        .filter(PredictionScore.id.is_(None))
+        .all()
+    )
+
+    now = datetime.utcnow()
+    by_fixture = {}
+    for p in unscored:
+        by_fixture.setdefault(p.fixture_id, []).append(p)
+
+    details = []
+    for fixture_id, preds in by_fixture.items():
+        match_date = preds[0].match_date
+        past_kickoff = bool(match_date and match_date <= now)
+        api_status = None
+        api_goals = None
+        if past_kickoff:
+            fixture = _fetch_fixture(fixture_id)
+            if fixture:
+                api_status = fixture.get('fixture', {}).get('status', {}).get('short', '')
+                api_goals = fixture.get('goals', {})
+        details.append({
+            'fixture_id': fixture_id,
+            'unscored_predictions': len(preds),
+            'match_date': match_date.isoformat() if match_date else None,
+            'past_kickoff': past_kickoff,
+            'api_status': api_status,
+            'is_finished_per_api': api_status in FINISHED if api_status else None,
+            'api_goals': api_goals,
+        })
+
+    return jsonify({
+        'now_utc': now.isoformat(),
+        'total_unscored_predictions': len(unscored),
+        'total_unscored_fixtures': len(by_fixture),
+        'fixtures': details,
+    }), 200

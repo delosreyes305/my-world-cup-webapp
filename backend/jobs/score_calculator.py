@@ -83,7 +83,7 @@ def calculate_scores(app):
         )
 
         if not unscored:
-            return
+            return {'unscored_predictions': 0, 'processed': 0}
 
         # Group by fixture_id to minimize API calls
         by_fixture: dict[int, list[Prediction]] = {}
@@ -171,6 +171,12 @@ def calculate_scores(app):
 
         if processed > 0:
             print(f'[score_calculator] Scored {processed} prediction(s)')
+
+        return {
+            'unscored_predictions': len(unscored),
+            'unscored_fixtures': len(by_fixture),
+            'processed': processed,
+        }
 
 # ── Request-triggered fallback ─────────────────────────────────────────
 # Uses a temp file as a cross-worker cooldown lock so all Gunicorn
