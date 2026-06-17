@@ -566,10 +566,11 @@ def admin_score_debug():
     if not secret or request.headers.get('X-Admin-Secret') != secret:
         return jsonify({'error': 'Unauthorized'}), 401
 
-    from jobs.score_calculator import _fetch_fixture, FINISHED, API_KEY
+    from jobs.score_calculator import _fetch_fixture, FINISHED
     from datetime import datetime
 
-    key_preview = (API_KEY[:4] + '...' + API_KEY[-4:]) if len(API_KEY) > 8 else ('<empty>' if not API_KEY else API_KEY)
+    _key = os.getenv('VITE_FOOTBALL_API_KEY', '')
+    key_preview = (_key[:4] + '...' + _key[-4:]) if len(_key) > 8 else ('<empty>' if not _key else _key)
 
     unscored = (
         db.session.query(Prediction)

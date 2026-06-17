@@ -17,7 +17,6 @@ from models import Prediction, PredictionScore, QuinielaProfile
 from extensions import db
 
 API_BASE    = 'https://v3.football.api-sports.io'
-API_KEY     = os.getenv('VITE_FOOTBALL_API_KEY', '')
 WC_LEAGUE   = 1
 WC_SEASON   = 2026
 FINISHED    = {'FT', 'AET', 'PEN'}
@@ -25,13 +24,15 @@ FINISHED    = {'FT', 'AET', 'PEN'}
 
 def _fetch_fixture(fixture_id: int):
     """Fetch a single fixture from API-Football."""
-    if not API_KEY or API_KEY == 'TU_CLAVE_AQUI':
+    api_key = os.getenv('VITE_FOOTBALL_API_KEY', '')
+    if not api_key or api_key == 'TU_CLAVE_AQUI':
+        print('[score_calculator] VITE_FOOTBALL_API_KEY is empty — cannot fetch fixture')
         return None
     try:
         resp = requests.get(
             f'{API_BASE}/fixtures',
             params={'id': fixture_id},
-            headers={'x-apisports-key': API_KEY},
+            headers={'x-apisports-key': api_key},
             timeout=10,
         )
         data = resp.json()
