@@ -507,7 +507,7 @@ export async function getTopScorers() {
     { headers }
   )
 
-  const topScorers = (topData.response || []).map(normalizePlayer)
+  const topScorers = (topData.response || []).map(raw => normalizePlayer(raw))
   return _sortByStat(topScorers, 'goals')
 }
 
@@ -519,7 +519,7 @@ export async function getTopAssists() {
     `${BASE}/players/topassists?league=${WC_LEAGUE}&season=${WC_SEASON}`,
     { headers }
   )
-  const players = (data.response || []).map(normalizePlayer)
+  const players = (data.response || []).map(raw => normalizePlayer(raw))
   return _sortByStat(players, 'assists')
 }
 
@@ -531,7 +531,7 @@ export async function getTopYellowCards() {
     `${BASE}/players/topyellowcards?league=${WC_LEAGUE}&season=${WC_SEASON}`,
     { headers }
   )
-  const players = (data.response || []).map(normalizePlayer)
+  const players = (data.response || []).map(raw => normalizePlayer(raw))
   return _sortByStat(players, 'yellowCards')
 }
 
@@ -543,7 +543,7 @@ export async function getTopRedCards() {
     `${BASE}/players/topredcards?league=${WC_LEAGUE}&season=${WC_SEASON}`,
     { headers }
   )
-  const players = (data.response || []).map(normalizePlayer)
+  const players = (data.response || []).map(raw => normalizePlayer(raw))
   return _sortByStat(players, 'redCards')
 }
 
@@ -565,7 +565,7 @@ export async function getPlayersByTeam(teamId) {
     `${BASE}/players?team=${teamId}&season=${WC_SEASON}`,
     { headers }
   )
-  return (data.response || []).map(normalizePlayer)
+  return (data.response || []).map(raw => normalizePlayer(raw))
 }
 
 // ─────────────────────────────────────────────────────
