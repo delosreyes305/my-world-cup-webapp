@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { prompt, system, max_tokens = 900 } = req.body
+    const { prompt, system, max_tokens = 900, temperature } = req.body
 
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -29,6 +29,7 @@ export default async function handler(req, res) {
         model: 'claude-sonnet-4-5',
         max_tokens,
         ...(system ? { system } : {}),
+        ...(temperature != null ? { temperature } : {}),
         messages: [{ role: 'user', content: prompt }],
       }),
     })

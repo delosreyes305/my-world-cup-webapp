@@ -6,9 +6,10 @@
 // AI calls need a longer timeout than other API calls (Claude can take 15-20s)
 const AI_TIMEOUT_MS = 25000
 
-async function callClaude({ prompt, system, max_tokens = 650 }) {
+async function callClaude({ prompt, system, max_tokens = 650, temperature }) {
   const body = { prompt, max_tokens }
   if (system) body.system = system
+  if (temperature != null) body.temperature = temperature
 
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
@@ -77,12 +78,21 @@ export async function getMatchPredictionAI(team1, team2, lang = 'en') {
   const t1info = `${team1.flag || ''} ${team1.name}: FIFA #${team1.rank || '?'}, form: ${team1.form?.join('-') || 'N/A'}, WC titles: ${team1.titles || 0}, coach: ${team1.coach || 'TBD'}`
   const t2info = `${team2.flag || ''} ${team2.name}: FIFA #${team2.rank || '?'}, form: ${team2.form?.join('-') || 'N/A'}, WC titles: ${team2.titles || 0}, coach: ${team2.coach || 'TBD'}`
 
+  // Random seed forces the model to treat each call independently instead of
+  // gravitating toward the single most statistically common scoreline (2-1/1-0).
+  const seed = Math.floor(Math.random() * 1_000_000)
+
   const prompt = isEs
-    ? `Genera un análisis estructurado para el partido de la Copa del Mundo 2026:
+    ? `Eres un motor de simulación de partidos. Simula este partido de la Copa del Mundo 2026 paso a paso, como si lanzaras los dados según la fuerza de cada equipo (semilla de aleatoriedad: ${seed} — úsala para variar tu resultado entre simulaciones distintas del mismo partido).
+
 ${t1info}
 ${t2info}
 
-IMPORTANTE sobre el marcador: evita por defecto "2-1". Elige UN marcador realista entre esta variedad según el análisis táctico (no los repitas siempre, varía según el partido): 1-0, 0-0, 1-1, 2-0, 0-1, 2-2, 3-1, 1-3, 3-0, 4-1, 2-3, 0-2. El marcador debe reflejar la diferencia de nivel entre los equipos: si son parejos, considera empate o resultado ajustado; si hay gran diferencia de ranking, considera un resultado más amplio.
+PROCESO OBLIGATORIO (hazlo internamente, no lo muestres en la respuesta):
+1. Estima el número esperado de goles de ${team1.name} en este partido específico (considera ranking, forma reciente, y que el fútbol tiene alta varianza — no asumas siempre el mismo número).
+2. Estima el número esperado de goles de ${team2.name} de la misma forma.
+3. A partir de esos dos números esperados, decide un marcador final concreto. Los marcadores de fútbol reales tienen mucha variación: 0-0, 1-0, 2-1, 3-1, 1-1, 2-0, 4-2, 0-1, etc. son TODOS igualmente válidos dependiendo del partido. NO tengas un marcador "por defecto": cada simulación con una semilla distinta debe poder dar un resultado distinto, incluso para el mismo enfrentamiento.
+4. Si el ranking FIFA es muy similar entre ambos equipos, los goles esperados deben ser parecidos (favorece empates o resultados ajustados 1-0, 1-1, 2-1). Si hay una diferencia grande de ranking, el favorito puede ganar por un margen mayor (2-0, 3-0, 3-1) pero los marcadores de sorpresa (underdog gana o empata) también deben ser posibles ocasionalmente, como en el fútbol real.
 
 Responde ÚNICAMENTE con JSON válido (sin texto extra ni markdown), usando esta estructura exacta (los valores son solo ejemplos de formato, NO los uses literalmente):
 {
@@ -96,11 +106,16 @@ Responde ÚNICAMENTE con JSON válido (sin texto extra ni markdown), usando esta
   "tactics": "descripción táctica de 1-2 oraciones",
   "analysis": "narrativa apasionada del partido en 3-4 oraciones"
 }`
-    : `Generate a structured analysis for this FIFA World Cup 2026 match:
+    : `You are a match simulation engine. Simulate this FIFA World Cup 2026 match step by step, as if rolling weighted dice based on each team's strength (randomness seed: ${seed} — use it to vary your result across different simulations of the same fixture).
+
 ${t1info}
 ${t2info}
 
-IMPORTANT about the score: avoid defaulting to "2-1". Pick ONE realistic scoreline from this variety based on your tactical analysis (don't always repeat the same one — vary it per matchup): 1-0, 0-0, 1-1, 2-0, 0-1, 2-2, 3-1, 1-3, 3-0, 4-1, 2-3, 0-2. The score should reflect the gap between the teams: if they're evenly matched, consider a draw or tight result; if there's a big ranking gap, consider a more decisive result.
+REQUIRED PROCESS (do this internally, don't show it in your reply):
+1. Estimate ${team1.name}'s expected goals in this specific match (factor in ranking, recent form, and remember football has high variance — don't default to the same number every time).
+2. Estimate ${team2.name}'s expected goals the same way.
+3. From those two expected-goal values, decide on one concrete final scoreline. Real football scorelines vary a lot: 0-0, 1-0, 2-1, 3-1, 1-1, 2-0, 4-2, 0-1, etc. are ALL equally valid depending on the match. Do NOT have a "default" scoreline — each simulation with a different seed should be able to produce a different result, even for the same fixture.
+4. If FIFA rankings are close between the two teams, expected goals should be similar (favor draws or tight scorelines like 1-0, 1-1, 2-1). If there's a large ranking gap, the favorite may win by a bigger margin (2-0, 3-0, 3-1), but upset scorelines (underdog wins or draws) should also occasionally be possible, just like in real football.
 
 Reply ONLY with valid JSON (no extra text, no markdown), using this exact structure (the values shown are placeholders for FORMAT only, do NOT use them literally):
 {
@@ -117,7 +132,7 @@ Reply ONLY with valid JSON (no extra text, no markdown), using this exact struct
 
   // ── Call the API — let auth/config errors bubble up ──
   // Only catch JSON-parse issues (bad response format) and fall back to mock.
-  const text = await callClaude({ prompt, system, max_tokens: 650 })
+  const text = await callClaude({ prompt, system, max_tokens: 650, temperature: 1 })
 
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/)
