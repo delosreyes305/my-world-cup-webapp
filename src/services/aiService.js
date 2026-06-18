@@ -78,55 +78,61 @@ export async function getMatchPredictionAI(team1, team2, lang = 'en') {
   const t1info = `${team1.flag || ''} ${team1.name}: FIFA #${team1.rank || '?'}, form: ${team1.form?.join('-') || 'N/A'}, WC titles: ${team1.titles || 0}, coach: ${team1.coach || 'TBD'}`
   const t2info = `${team2.flag || ''} ${team2.name}: FIFA #${team2.rank || '?'}, form: ${team2.form?.join('-') || 'N/A'}, WC titles: ${team2.titles || 0}, coach: ${team2.coach || 'TBD'}`
 
-  // Random seed forces the model to treat each call independently instead of
-  // gravitating toward the single most statistically common scoreline (2-1/1-0).
-  const seed = Math.floor(Math.random() * 1_000_000)
+  // Random seed + explicit dice rolls force genuine variation instead of the
+  // model collapsing onto the single most statistically common scoreline.
+  const seed   = Math.floor(Math.random() * 1_000_000)
+  const dice1  = (Math.random() * 6).toFixed(2)
+  const dice2  = (Math.random() * 6).toFixed(2)
 
   const prompt = isEs
-    ? `Eres un motor de simulación de partidos. Simula este partido de la Copa del Mundo 2026 paso a paso, como si lanzaras los dados según la fuerza de cada equipo (semilla de aleatoriedad: ${seed} — úsala para variar tu resultado entre simulaciones distintas del mismo partido).
+    ? `Eres un motor estadístico de simulación de fútbol (no un narrador). Tu única fuente de verdad para el marcador son los cálculos numéricos que vas a hacer ahora, NO un patrón típico de fútbol ni un marcador "común".
 
 ${t1info}
 ${t2info}
 
-PROCESO OBLIGATORIO (hazlo internamente, no lo muestres en la respuesta):
-1. Estima el número esperado de goles de ${team1.name} en este partido específico (considera ranking, forma reciente, y que el fútbol tiene alta varianza — no asumas siempre el mismo número).
-2. Estima el número esperado de goles de ${team2.name} de la misma forma.
-3. A partir de esos dos números esperados, decide un marcador final concreto. Los marcadores de fútbol reales tienen mucha variación: 0-0, 1-0, 2-1, 3-1, 1-1, 2-0, 4-2, 0-1, etc. son TODOS igualmente válidos dependiendo del partido. NO tengas un marcador "por defecto": cada simulación con una semilla distinta debe poder dar un resultado distinto, incluso para el mismo enfrentamiento.
-4. Si el ranking FIFA es muy similar entre ambos equipos, los goles esperados deben ser parecidos (favorece empates o resultados ajustados 1-0, 1-1, 2-1). Si hay una diferencia grande de ranking, el favorito puede ganar por un margen mayor (2-0, 3-0, 3-1) pero los marcadores de sorpresa (underdog gana o empata) también deben ser posibles ocasionalmente, como en el fútbol real.
+Números aleatorios para esta simulación (úsalos como semillas de tu cálculo, ignóralos en el texto final): seed=${seed}, roll1=${dice1}, roll2=${dice2}
 
-Responde ÚNICAMENTE con JSON válido (sin texto extra ni markdown), usando esta estructura exacta (los valores son solo ejemplos de formato, NO los uses literalmente):
+CÁLCULO OBLIGATORIO (muestra tu razonamiento en el campo "tactics" de forma breve, ej: "Goles esperados: ${team1.name} 2.3 — ${team2.name} 0.8"):
+1. Calcula goles esperados (xG) de ${team1.name} como un decimal entre 0.0 y 4.0, basado en su ranking FIFA, forma reciente y nivel del rival. Usa roll1 para variar el resultado dentro del rango plausible.
+2. Calcula goles esperados (xG) de ${team2.name} de la misma forma usando roll2.
+3. Redondea cada xG al entero más cercano (con redondeo normal, no siempre hacia arriba ni hacia abajo) para obtener los goles finales de cada equipo. Estos dos números, tal cual salgan del cálculo, SON el marcador final — no los ajustes ni los sustituyas por un resultado "típico".
+4. NO existe ningún marcador prohibido ni ningún marcador obligatorio. 0-0, 5-0, 1-4, 3-3, cualquier combinación es válida si así lo indica tu cálculo de xG. Confía en el número que calculaste, no en lo que "suene más realista" de memoria.
+
+Responde ÚNICAMENTE con JSON válido (sin texto extra ni markdown). NO copies los números de ejemplo de abajo — son solo para mostrar el formato del JSON, tus valores reales deben venir de tu cálculo:
 {
-  "score": "${team1.name} X-Y ${team2.name}",
-  "winner": "nombre del equipo ganador o Draw/Empate si X=Y",
+  "score": "${team1.name} <goles1>-<goles2> ${team2.name}",
+  "winner": "nombre del equipo con más goles, o Draw/Empate si son iguales",
   "confidence": 70,
   "team1_strengths": ["fortaleza 1", "fortaleza 2", "fortaleza 3"],
   "team2_strengths": ["fortaleza 1", "fortaleza 2", "fortaleza 3"],
   "key_player_1": "jugador clave de ${team1.name}",
   "key_player_2": "jugador clave de ${team2.name}",
-  "tactics": "descripción táctica de 1-2 oraciones",
+  "tactics": "incluye aquí tu cálculo de xG de cada equipo en una frase breve",
   "analysis": "narrativa apasionada del partido en 3-4 oraciones"
 }`
-    : `You are a match simulation engine. Simulate this FIFA World Cup 2026 match step by step, as if rolling weighted dice based on each team's strength (randomness seed: ${seed} — use it to vary your result across different simulations of the same fixture).
+    : `You are a statistical football simulation engine (not a storyteller). Your only source of truth for the scoreline is the numeric calculation you are about to perform — NOT a typical football pattern or a "common" scoreline.
 
 ${t1info}
 ${t2info}
 
-REQUIRED PROCESS (do this internally, don't show it in your reply):
-1. Estimate ${team1.name}'s expected goals in this specific match (factor in ranking, recent form, and remember football has high variance — don't default to the same number every time).
-2. Estimate ${team2.name}'s expected goals the same way.
-3. From those two expected-goal values, decide on one concrete final scoreline. Real football scorelines vary a lot: 0-0, 1-0, 2-1, 3-1, 1-1, 2-0, 4-2, 0-1, etc. are ALL equally valid depending on the match. Do NOT have a "default" scoreline — each simulation with a different seed should be able to produce a different result, even for the same fixture.
-4. If FIFA rankings are close between the two teams, expected goals should be similar (favor draws or tight scorelines like 1-0, 1-1, 2-1). If there's a large ranking gap, the favorite may win by a bigger margin (2-0, 3-0, 3-1), but upset scorelines (underdog wins or draws) should also occasionally be possible, just like in real football.
+Random numbers for this simulation (use them as calculation seeds, don't mention them in the final text): seed=${seed}, roll1=${dice1}, roll2=${dice2}
 
-Reply ONLY with valid JSON (no extra text, no markdown), using this exact structure (the values shown are placeholders for FORMAT only, do NOT use them literally):
+REQUIRED CALCULATION (briefly show your reasoning in the "tactics" field, e.g. "Expected goals: ${team1.name} 2.3 — ${team2.name} 0.8"):
+1. Calculate ${team1.name}'s expected goals (xG) as a decimal between 0.0 and 4.0, based on FIFA ranking, recent form, and opponent strength. Use roll1 to vary the result within the plausible range.
+2. Calculate ${team2.name}'s expected goals (xG) the same way using roll2.
+3. Round each xG to the nearest whole number (standard rounding, not always up or down) to get each team's final goals. These two numbers, exactly as they come out of the calculation, ARE the final scoreline — do not adjust them or replace them with a "typical" result.
+4. There is NO forbidden scoreline and NO required scoreline. 0-0, 5-0, 1-4, 3-3 — any combination is valid if that's what your xG calculation produces. Trust the number you calculated, not what "sounds more realistic" from memory.
+
+Reply ONLY with valid JSON (no extra text, no markdown). Do NOT copy the example numbers below — they're only there to show the JSON format, your actual values must come from your calculation:
 {
-  "score": "${team1.name} X-Y ${team2.name}",
-  "winner": "winning team name, or Draw if X equals Y",
+  "score": "${team1.name} <goals1>-<goals2> ${team2.name}",
+  "winner": "name of the team with more goals, or Draw if equal",
   "confidence": 70,
   "team1_strengths": ["strength 1", "strength 2", "strength 3"],
   "team2_strengths": ["strength 1", "strength 2", "strength 3"],
   "key_player_1": "key player name from ${team1.name}",
   "key_player_2": "key player name from ${team2.name}",
-  "tactics": "brief 1-2 sentence tactical breakdown",
+  "tactics": "include your xG calculation for each team here in one brief sentence",
   "analysis": "passionate 3-4 sentence match narrative"
 }`
 
