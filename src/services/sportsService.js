@@ -196,6 +196,7 @@ export const TEAM_METADATA = {
   Austria:                { rank: 24, titles: 0 },
   Sweden:                 { rank: 38, titles: 0 },
   'Czech Republic':       { rank: 39, titles: 0 },
+  Czechia:                { rank: 39, titles: 0 },
   'Türkiye':              { rank: 22, titles: 0 },
   Norway:                 { rank: 31, titles: 0 },
   Scotland:               { rank: 42, titles: 0 },
@@ -245,7 +246,7 @@ export const TEAM_ISO = {
   Argentina: 'ar',   Spain: 'es',      France: 'fr',     England: 'gb-eng',
   Portugal: 'pt',    Netherlands: 'nl', Belgium: 'be',    Germany: 'de',
   Croatia: 'hr',     Switzerland: 'ch', Sweden: 'se',     Austria: 'at',
-  'Czech Republic': 'cz', Scotland: 'gb-sct', Norway: 'no', 'Türkiye': 'tr',
+  'Czech Republic': 'cz', Czechia: 'cz', Scotland: 'gb-sct', Norway: 'no', 'Türkiye': 'tr',
   'Bosnia & Herzegovina': 'ba',
   // CONMEBOL
   Brazil: 'br', Colombia: 'co', Uruguay: 'uy', Ecuador: 'ec', Paraguay: 'py',
@@ -266,7 +267,7 @@ export const TEAM_ISO = {
 const CONFEDERATION_MAP = {
   // UEFA – 16
   Belgium: 'UEFA', France: 'UEFA', Croatia: 'UEFA', Sweden: 'UEFA',
-  Switzerland: 'UEFA', 'Czech Republic': 'UEFA', Austria: 'UEFA',
+  Switzerland: 'UEFA', 'Czech Republic': 'UEFA', Czechia: 'UEFA', Austria: 'UEFA',
   'Türkiye': 'UEFA', Norway: 'UEFA', Scotland: 'UEFA',
   'Bosnia & Herzegovina': 'UEFA', Netherlands: 'UEFA', Germany: 'UEFA',
   Spain: 'UEFA', England: 'UEFA', Portugal: 'UEFA',
@@ -306,6 +307,7 @@ const NATIONAL_STADIUMS = {
   Sweden:                 { name: 'Friends Arena',               city: 'Stockholm',      capacity: 50000 },
   Austria:                { name: 'Ernst Happel Stadion',        city: 'Vienna',         capacity: 48500 },
   'Czech Republic':       { name: 'Sinobo Stadium',              city: 'Prague',         capacity: 20814 },
+  Czechia:                { name: 'Sinobo Stadium',              city: 'Prague',         capacity: 20814 },
   Scotland:               { name: 'Hampden Park',                city: 'Glasgow',        capacity: 52063 },
   Norway:                 { name: 'Ullevaal Stadion',            city: 'Oslo',           capacity: 27182 },
   'Türkiye':              { name: 'Atatürk Olympic Stadium',     city: 'Istanbul',       capacity: 76092 },
