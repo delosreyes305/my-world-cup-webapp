@@ -4,6 +4,7 @@ import { useLang } from '../context/LangContext'
 import { useApi } from '../hooks/useApi'
 import { getStandings, getAllFixtures } from '../services/sportsService'
 import ApiStatus from '../components/common/ApiStatus'
+import { sortR32ByBracket } from '../data/bracketData'
 
 // ─── Knockout round definitions (order matters) ────────
 const KNOCKOUT_ROUNDS = [
@@ -184,8 +185,9 @@ export default function Bracket() {
         if (!buckets[round.key]) buckets[round.key] = { ...round, matches: [] }
         buckets[round.key].matches.push(m)
       })
-    // Sort all rounds by date (FIFA schedules matches in official bracket order)
+    // Sort all rounds by date, R32 by official bracket position
     Object.values(buckets).forEach(b => b.matches.sort((a, z) => new Date(a.date) - new Date(z.date)))
+    if (buckets.r32) buckets.r32.matches = sortR32ByBracket(buckets.r32.matches)
     return KNOCKOUT_ROUNDS.filter(r => buckets[r.key]).map(r => buckets[r.key])
   }, [fixtures])
 
@@ -312,8 +314,8 @@ export default function Bracket() {
           */}
           <div className="bracket-wrap">
             {knockoutRounds.map(round => {
-              const SLOT = 80   // px — must match CSS :root --bk-slot
-              const CARD = 72   // px — must match CSS :root --bk-card
+              const SLOT = 88   // px — must match CSS :root --bk-slot
+              const CARD = 80   // px — must match CSS :root --bk-card
 
               // How many R32 slots does each card in this round span?
               const slotsPerCard = {
@@ -323,18 +325,8 @@ export default function Bracket() {
               const totalSlots = 16  // always based on R32 count
               const slotHeight = totalSlots * SLOT
 
-              // For R16 specifically, the parent R32 rows are non-consecutive
-              // (bracket order ≠ sequential). Use the official FIFA mapping.
-              const r16ParentRows = [
-                [1, 4],   // M89: M74(row1) vs M77(row4)
-                [0, 2],   // M90: M73(row0) vs M75(row2)
-                [3, 5],   // M91: M76(row3) vs M78(row5)
-                [6, 7],   // M92: M79(row6) vs M80(row7)
-                [10, 11], // M93: M83(row10) vs M84(row11)
-                [8, 9],   // M94: M81(row8)  vs M82(row9)
-                [13, 15], // M95: M86(row13) vs M88(row15)
-                [12, 14], // M96: M85(row12) vs M87(row14)
-              ]
+              // R32 is now sorted in consecutive pairs: 0,1 → R16[0], 2,3 → R16[1], etc.
+              const r16ParentRows = Array.from({ length: 8 }, (_, i) => [i * 2, i * 2 + 1])
 
               // Compute top position for each card in this round
               function cardTop(i) {

@@ -51,13 +51,49 @@ export const THIRD_PLACE = 103
 export const FINAL     = 104
 
 /**
- * Sort R32 fixtures into official bracket order (matches 73-88 top to bottom).
- * Falls back to date-sort if match numbers aren't available.
+ * Maps API-Football fixture IDs to their official bracket position (0-indexed).
+ * Position 0 = top of bracket, 15 = bottom.
+ * Order is arranged so consecutive pairs feed the same R16 slot:
+ *   positions 0,1  → R16 M89
+ *   positions 2,3  → R16 M90
+ *   positions 4,5  → R16 M91
+ *   positions 6,7  → R16 M92
+ *   positions 8,9  → R16 M93
+ *   positions 10,11 → R16 M94
+ *   positions 12,13 → R16 M95
+ *   positions 14,15 → R16 M96
+ */
+export const R32_FIXTURE_ORDER = {
+  1565176: 0,  // Germany vs Paraguay        (M74)
+  1565177: 1,  // France vs Sweden            (M77)
+  1561329: 2,  // South Africa vs Canada      (M73)
+  1562345: 3,  // Netherlands vs Morocco      (M75)
+  1562344: 4,  // Brazil vs Japan             (M76)
+  1564789: 5,  // Ivory Coast vs Norway       (M78)
+  1567306: 6,  // Mexico vs Ecuador           (M79)
+  1567307: 7,  // England vs Congo DR         (M80)
+  1567309: 8,  // Portugal vs Croatia         (M83)
+  1567311: 9,  // Spain vs Austria            (M84)
+  1562586: 10, // USA vs Bosnia               (M81)
+  1567308: 11, // Belgium vs Senegal          (M82)
+  1565179: 12, // Argentina vs Cape Verde     (M86)
+  1565178: 13, // Australia vs Egypt          (M88)
+  1567312: 14, // Switzerland vs Algeria      (M85)
+  1567310: 15, // Colombia vs Ghana           (M87)
+}
+
+/**
+ * Sort R32 fixtures into official bracket order using fixture IDs.
+ * Falls back to date sort for unknown IDs.
  */
 export function sortR32ByBracket(r32Matches) {
   if (!r32Matches?.length) return r32Matches || []
-  // API-Football schedules R32 matches in official FIFA bracket order by date
-  return [...r32Matches].sort((a, b) => new Date(a.date) - new Date(b.date))
+  return [...r32Matches].sort((a, b) => {
+    const ai = R32_FIXTURE_ORDER[a.id] ?? 99
+    const bi = R32_FIXTURE_ORDER[b.id] ?? 99
+    if (ai === 99 && bi === 99) return new Date(a.date) - new Date(b.date)
+    return ai - bi
+  })
 }
 
 /**

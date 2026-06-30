@@ -522,7 +522,7 @@ img { max-width: 100%; }
    Slot height = CARD_H + GAP = 72 + 8 = 80px (set as CSS var).
    R32 = 16 slots, R16 = 8 (each spanning 2 R32 slots), QF = 4, SF = 2, F = 1.
 ──────────────────────────────────────────────────────── */
-:root { --bk-card: 72px; --bk-gap: 8px; --bk-slot: 80px; }
+:root { --bk-card: 80px; --bk-gap: 8px; --bk-slot: 88px; }
 
 .bracket-wrap {
   display: flex;
@@ -558,12 +558,15 @@ img { max-width: 100%; }
   background: var(--card);
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: var(--radius-sm);
-  padding: 8px 10px;
+  padding: 10px 12px;
   cursor: pointer;
   transition: var(--transition);
   font-size: 12px;
   box-sizing: border-box;
   height: var(--bk-card);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 .bracket-match:hover { border-color: rgba(240,180,41,0.2); }
 .bracket-team { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; }
