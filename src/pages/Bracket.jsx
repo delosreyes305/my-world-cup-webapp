@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useApi } from '../hooks/useApi'
 import { getStandings, getAllFixtures } from '../services/sportsService'
-import { sortR32ByBracket, sortR16ByBracket, computeR16Offsets } from '../data/bracketData'
+import { sortR32ByBracket, sortR16ByBracket } from '../data/bracketData'
 import ApiStatus from '../components/common/ApiStatus'
 
 // ─── Knockout round definitions (order matters) ────────
@@ -301,38 +301,62 @@ export default function Bracket() {
           {/* Scrollable horizontal bracket */}
           <div className="bracket-wrap" style={{ alignItems: 'flex-start' }}>
             {knockoutRounds.map(round => {
-              // Compute vertical offsets for R16 cards so each sits centered
-              // between its two parent R32 cards
+              // Card + gap dimensions (must match CSS .bracket-match + gap)
               const CARD_H = 82
-              const R16_H  = 74
               const GAP    = 10
-              const r16Offsets = round.key === 'r16'
-                ? computeR16Offsets(CARD_H, R16_H, GAP)
-                : null
+              const UNIT   = CARD_H + GAP  // px per R32 row
+
+              // For R16: compute marginTop between consecutive cards using
+              // parent row positions so each R16 card sits centered between
+              // its two R32 parents.
+              //
+              // parentRows[i] = [topRow, botRow] (0-indexed R32 positions)
+              const parentRows = [
+                [1, 4],   // M89 ← M74(row1), M77(row4)
+                [0, 2],   // M90 ← M73(row0), M75(row2)
+                [3, 5],   // M91 ← M76(row3), M78(row5)
+                [6, 7],   // M92 ← M79(row6), M80(row7)
+                [10, 11], // M93 ← M83(row10), M84(row11)
+                [8, 9],   // M94 ← M81(row8),  M82(row9)
+                [13, 15], // M95 ← M86(row13), M88(row15)
+                [12, 14], // M96 ← M85(row12), M87(row14)
+              ]
+
+              // Compute absolute top for each R16 card (center between parents)
+              const r16Tops = parentRows.map(([topRow, botRow]) => {
+                const topEdge = topRow * UNIT
+                const botEdge = botRow * UNIT + CARD_H
+                const r16H    = CARD_H - 8  // R16 cards slightly shorter
+                return Math.round(topEdge + (botEdge - topEdge - r16H) / 2)
+              })
 
               return (
-                <div key={round.key} className="bracket-round" style={{
-                  minWidth: 190,
-                  position: 'relative',
-                  // R16 column needs explicit height to contain absolute children
-                  ...(round.key === 'r16' && { height: 16 * (CARD_H + GAP) }),
-                }}>
+                <div key={round.key} className="bracket-round" style={{ minWidth: 190 }}>
                   <div className="bracket-round-title">
                     {ROUND_LABELS[round.key] || round.label}
                     <span style={{ marginLeft: 6, color: 'var(--text3)', fontSize: 9 }}>
                       ({round.matches.length})
                     </span>
                   </div>
-                  {round.matches.map((m, i) => (
-                    <div
-                      key={m.id}
-                      style={r16Offsets
-                        ? { position: 'absolute', top: r16Offsets[i], left: 0, right: 0 }
-                        : undefined}
-                    >
-                      <BracketMatch match={m} navigate={navigate} />
+
+                  {round.key === 'r16' ? (
+                    // R16: use a relative container with absolute-positioned cards
+                    <div style={{ position: 'relative', height: 16 * UNIT }}>
+                      {round.matches.map((m, i) => (
+                        <div key={m.id} style={{
+                          position: 'absolute',
+                          top: r16Tops[i] ?? i * UNIT * 2,
+                          left: 0, right: 0,
+                        }}>
+                          <BracketMatch match={m} navigate={navigate} />
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    round.matches.map(m => (
+                      <BracketMatch key={m.id} match={m} navigate={navigate} />
+                    ))
+                  )}
                 </div>
               )
             })}
