@@ -481,7 +481,9 @@ function LeaderboardTable({ board, lang, onViewUser }) {
               : 'rgba(255,255,255,0.06)',
             color: entry.rank <= 3 ? '#0a0e1a' : 'var(--text3)',
           }}>
-            {entry.rank}
+            {entry.rank <= 3
+              ? <i className={`fa-solid ${['fa-trophy','fa-medal','fa-award'][entry.rank-1]}`} style={{ fontSize: 12 }} aria-hidden="true" />
+              : entry.rank}
           </div>
 
           <Avatar alias={entry.alias} color={entry.avatar_color} size={32} />
