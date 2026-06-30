@@ -1276,9 +1276,9 @@ export default function Quiniela() {
 
   const tabs = [
     { key: 'predict',  label: lang === 'es' ? 'Predecir'   : 'Predict',   icon: 'fa-solid fa-pen-to-square' },
-    { key: 'history',  label: lang === 'es' ? 'Mis predicciones' : 'My predictions', icon: 'fa-solid fa-clock-rotate-left' },
+    { key: 'history',  label: lang === 'es' ? 'Mis predicciones' : 'Predictions', icon: 'fa-solid fa-clock-rotate-left' },
     { key: 'global',   label: lang === 'es' ? 'Global'     : 'Global',    icon: 'fa-solid fa-ranking-star'  },
-    { key: 'leagues',  label: lang === 'es' ? 'Mis ligas'  : 'My leagues', icon: 'fa-solid fa-users'        },
+    { key: 'leagues',  label: lang === 'es' ? 'Mis ligas'  : 'Leagues', icon: 'fa-solid fa-users'        },
     { key: 'champion', label: lang === 'es' ? 'Campeón'    : 'Champion',   icon: 'fa-solid fa-trophy'       },
   ]
 

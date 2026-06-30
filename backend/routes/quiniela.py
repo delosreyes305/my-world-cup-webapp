@@ -577,17 +577,32 @@ def save_champion_pick():
 @quiniela_bp.route('/champion-pick/active-teams', methods=['GET'])
 def get_active_teams():
     """Return teams still in the tournament.
-    A team is active if it has at least one upcoming or live fixture
-    in the current knockout stage (or group stage if still running).
-    Teams that lost their last knockout match are excluded.
+    Starts from the 32 teams that qualified for the Round of 32,
+    then removes any that have lost a knockout fixture.
     """
     import requests as req_lib, os
 
+    # The 32 teams that qualified for the knockout stage (Round of 32)
+    R32_TEAMS = {
+        'Germany', 'Paraguay', 'France', 'Sweden',
+        'South Africa', 'Canada', 'Netherlands', 'Morocco',
+        'Brazil', 'Japan', 'Ivory Coast', 'Norway',
+        'Mexico', 'Ecuador', 'England', 'Congo DR',
+        'Portugal', 'Croatia', 'Spain', 'Austria',
+        'USA', 'Bosnia & Herzegovina', 'Belgium', 'Senegal',
+        'Argentina', 'Cape Verde Islands', 'Australia', 'Egypt',
+        'Switzerland', 'Algeria', 'Colombia', 'Ghana',
+    }
+
     FINISHED = {'FT', 'AET', 'PEN', 'AWD', 'WO'}
+    KNOCKOUT_ROUNDS = {'round of 32', 'round of 16', 'quarter-finals',
+                       'semi-finals', '3rd place final', 'final'}
+
     api_key = os.getenv('FOOTBALL_API_KEY', '')
-    active = []
+    eliminated = set()
+    team_flags = {}  # name → logo URL
+
     try:
-        # Fetch all fixtures for the tournament
         resp = req_lib.get(
             'https://v3.football.api-sports.io/fixtures?league=1&season=2026',
             headers={'x-apisports-key': api_key},
@@ -595,45 +610,38 @@ def get_active_teams():
         )
         fixtures = resp.json().get('response', [])
 
-        # Build set of eliminated team IDs:
-        # A team is eliminated if it lost a knockout fixture (non-group-stage)
-        eliminated_ids = set()
-        team_info = {}  # id → {name, logo}
-
         for fix in fixtures:
-            rnd = fix.get('league', {}).get('round', '')
+            rnd = fix.get('league', {}).get('round', '').lower()
             status = fix.get('fixture', {}).get('status', {}).get('short', '')
             home = fix.get('teams', {}).get('home', {})
             away = fix.get('teams', {}).get('away', {})
 
-            # Track all team info
+            # Cache flags for R32 teams
             for t in [home, away]:
-                if t.get('id'):
-                    team_info[t['id']] = {'name': t['name'], 'flag': t['logo']}
+                if t.get('name') in R32_TEAMS:
+                    team_flags[t['name']] = t.get('logo', '')
 
             # Only process finished knockout matches
-            is_knockout = not any(x in rnd.lower() for x in ['group', 'grp'])
+            is_knockout = any(r in rnd for r in KNOCKOUT_ROUNDS)
             if not is_knockout or status not in FINISHED:
                 continue
 
-            # Determine loser
-            home_winner = home.get('winner')
-            away_winner = away.get('winner')
-            if home_winner is False and away_winner is True:
-                eliminated_ids.add(home['id'])
-            elif away_winner is False and home_winner is True:
-                eliminated_ids.add(away['id'])
+            # Mark loser as eliminated
+            if home.get('winner') is False:
+                eliminated.add(home.get('name'))
+            if away.get('winner') is False:
+                eliminated.add(away.get('name'))
 
-        # Active = all teams minus eliminated
         active = [
-            {'name': info['name'], 'flag': info['flag']}
-            for tid, info in team_info.items()
-            if tid not in eliminated_ids
+            {'name': name, 'flag': team_flags.get(name, '')}
+            for name in R32_TEAMS
+            if name not in eliminated
         ]
         active.sort(key=lambda x: x['name'])
 
     except Exception as e:
         print(f'[active-teams] error: {e}')
+        active = [{'name': n, 'flag': ''} for n in sorted(R32_TEAMS)]
 
     return jsonify({'teams': active}), 200
 
