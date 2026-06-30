@@ -493,26 +493,36 @@ def league_champions(league_id):
     league_champs = {}
 
     for champ in global_champs:
-        if champ.user_id not in member_ids:
-            # Recalculate for this phase using only league members
-            phase_champ = (
-                QuinielaProfile.query
-                .filter(QuinielaProfile.user_id.in_(member_ids))
-                .order_by(
-                    QuinielaProfile.total_points.desc(),
-                    QuinielaProfile.correct_scores.desc(),
+        if champ.user_id in member_ids:
+            # Global champion is also in this league — use frozen points
+            league_champs[champ.phase] = champ.to_dict()
+        else:
+            # Find the best scorer in this league for this phase.
+            # Use awarded_at as the cutoff — only sum points calculated
+            # on or before the moment the global champion was declared,
+            # so the score is frozen at the same point in time.
+            cutoff = champ.awarded_at
+            phase_scores = (
+                db.session.query(
+                    QuinielaProfile.user_id,
+                    QuinielaProfile.alias,
+                    QuinielaProfile.avatar_color,
+                    db.func.sum(PredictionScore.points).label('phase_points')
                 )
+                .join(PredictionScore, PredictionScore.user_id == QuinielaProfile.user_id)
+                .filter(QuinielaProfile.user_id.in_(member_ids))
+                .filter(PredictionScore.calculated_at <= cutoff)
+                .group_by(QuinielaProfile.user_id, QuinielaProfile.alias, QuinielaProfile.avatar_color)
+                .order_by(db.text('phase_points DESC'))
                 .first()
             )
-            if phase_champ:
+            if phase_scores:
                 league_champs[champ.phase] = {
                     'phase':        champ.phase,
-                    'alias':        phase_champ.alias,
-                    'avatar_color': phase_champ.avatar_color,
-                    'points':       phase_champ.total_points,
+                    'alias':        phase_scores.alias,
+                    'avatar_color': phase_scores.avatar_color,
+                    'points':       phase_scores.phase_points or 0,
                 }
-        else:
-            league_champs[champ.phase] = champ.to_dict()
 
     return jsonify({'champions': league_champs}), 200
 
