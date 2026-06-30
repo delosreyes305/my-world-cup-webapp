@@ -25,7 +25,7 @@ class User(db.Model):
             'first_name': self.first_name,
             'last_name':  self.last_name,
             'email':      self.email,
-            'created_at': self.created_at.isoformat(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
 
@@ -49,7 +49,7 @@ class Favorite(db.Model):
             'type':       self.type,
             'item_id':    self.item_id,
             'item_data':  self.item_data,
-            'created_at': self.created_at.isoformat(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
         }
 
 
@@ -123,7 +123,7 @@ class QuinielaProfile(db.Model):
             'correct_winners':    self.correct_winners,
             'correct_scores':     self.correct_scores,
             'predictions_count':  self.predictions_count,
-            'created_at':         self.created_at.isoformat(),
+            'created_at':         self.created_at.isoformat() if self.created_at else None,
         }
 
 
@@ -173,8 +173,8 @@ class Prediction(db.Model):
             'match_date':  self.match_date.isoformat() if self.match_date else None,
             'group':       self.group,
             'is_locked':   self.is_locked,
-            'created_at':  self.created_at.isoformat(),
-            'updated_at':  self.updated_at.isoformat(),
+            'created_at':  self.created_at.isoformat() if self.created_at else None,
+            'updated_at':  self.updated_at.isoformat() if self.updated_at else None,
         }
         if include_score and self.score:
             d['score'] = self.score.to_dict()
@@ -239,7 +239,7 @@ class PrivateLeague(db.Model):
             'name':        self.name,
             'invite_code': self.invite_code,
             'owner_id':    self.owner_id,
-            'created_at':  self.created_at.isoformat(),
+            'created_at':  self.created_at.isoformat() if self.created_at else None,
         }
         if include_member_count:
             d['member_count'] = len(self.members)
@@ -267,7 +267,7 @@ class QuinielaChampion(db.Model):
             'alias':        self.alias,
             'avatar_color': self.avatar_color,
             'points':       self.points,
-            'awarded_at':   self.awarded_at.isoformat(),
+            'awarded_at':   self.awarded_at.isoformat() if self.awarded_at else None,
         }
 
 
