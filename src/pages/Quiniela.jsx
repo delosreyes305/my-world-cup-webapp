@@ -787,32 +787,69 @@ function LeagueChampionsBanner({ token, leagueId, lang }) {
 
   if (!phases.length) return null
 
+  // Phase → trophy style
+  const PHASE_STYLE = {
+    overall:     { bg: 'linear-gradient(135deg,rgba(240,180,41,0.18),rgba(240,180,41,0.06))', border: 'rgba(240,180,41,0.5)',  icon: 'fa-crown',         iconColor: '#f0b429', size: 28 },
+    knockout:    { bg: 'linear-gradient(135deg,rgba(148,163,184,0.15),rgba(148,163,184,0.04))', border: 'rgba(148,163,184,0.4)', icon: 'fa-shield-halved', iconColor: '#94a3b8', size: 24 },
+    group_stage: { bg: 'linear-gradient(135deg,rgba(205,127,50,0.15),rgba(205,127,50,0.04))',  border: 'rgba(205,127,50,0.4)',  icon: 'fa-users',         iconColor: '#cd7f32', size: 22 },
+  }
+
   return (
     <div style={{ marginBottom: 16 }}>
       {phases.map(phase => {
-        const c = champions[phase.key]
+        const c   = champions[phase.key]
+        const sty = PHASE_STYLE[phase.key] || PHASE_STYLE.group_stage
+        const isOverall = phase.key === 'overall'
         return (
           <div key={phase.key} className="card" style={{
-            marginBottom: 8,
-            background: 'linear-gradient(135deg, rgba(240,180,41,0.12), rgba(240,180,41,0.04))',
-            border: '1px solid rgba(240,180,41,0.3)',
+            marginBottom: 10,
+            background: sty.bg,
+            border: `1.5px solid ${sty.border}`,
+            padding: isOverall ? '18px 16px' : '14px 16px',
           }}>
+            {/* Phase label */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+              <i className={`fa-solid ${sty.icon}`} style={{ fontSize: sty.size - 6, color: sty.iconColor }} aria-hidden="true" />
+              <span style={{ fontSize: 10, color: sty.iconColor, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 700 }}>
+                {phase.label}
+              </span>
+            </div>
+
+            {/* Winner row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <i className={`fa-solid ${phase.icon}`} style={{ fontSize: 22, color: 'var(--gold)', flexShrink: 0 }} />
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 3 }}>
-                  {phase.label}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <Avatar alias={c.alias} color={c.avatar_color} size={28} />
-                  <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{c.alias}</span>
+              {/* Big trophy icon for overall, smaller for others */}
+              <div style={{
+                width: isOverall ? 48 : 38, height: isOverall ? 48 : 38,
+                borderRadius: '50%', flexShrink: 0,
+                background: `${sty.border.replace('0.5','0.15').replace('0.4','0.12')}`,
+                border: `1.5px solid ${sty.border}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <i className={`fa-solid ${sty.icon}`} style={{ fontSize: isOverall ? 22 : 16, color: sty.iconColor }} aria-hidden="true" />
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                  <Avatar alias={c.alias} color={c.avatar_color} size={isOverall ? 32 : 26} />
+                  <span style={{
+                    fontSize: isOverall ? 17 : 14, fontWeight: 700, color: 'var(--text)',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  }}>{c.alias}</span>
                 </div>
               </div>
+
+              {/* Frozen points */}
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, color: 'var(--gold)', lineHeight: 1 }}>
+                <div style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: isOverall ? 28 : 22,
+                  color: sty.iconColor, lineHeight: 1,
+                }}>
                   {c.points}
                 </div>
-                <div style={{ fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase' }}>pts</div>
+                <div style={{ fontSize: 9, color: 'var(--text3)', textTransform: 'uppercase' }}>
+                  {lang === 'es' ? 'puntos' : 'pts'}
+                </div>
               </div>
             </div>
           </div>
@@ -960,31 +997,38 @@ function LeaguesTab({ token, lang, userId }) {
         background: entry.is_me ? 'rgba(240,180,41,0.08)' : 'var(--card2)',
         border: entry.is_me ? '1px solid rgba(240,180,41,0.25)' : '1px solid rgba(255,255,255,0.04)',
       }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: 6, flexShrink: 0,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 700, fontSize: 13,
-          background: entry.rank <= 3 ? ['#f0b429','#94a3b8','#cd7f32'][entry.rank-1] : 'rgba(255,255,255,0.06)',
-          color: entry.rank <= 3 ? '#0a0e1a' : 'var(--text3)',
-        }}>{entry.rank}</div>
+        {/* Rank badge with podium icons */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 6,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontWeight: 700, fontSize: 13,
+            background: entry.rank <= 3 ? ['#f0b429','#94a3b8','#cd7f32'][entry.rank-1] : 'rgba(255,255,255,0.06)',
+            color: entry.rank <= 3 ? '#0a0e1a' : 'var(--text3)',
+          }}>
+            {entry.rank <= 3
+              ? <i className={`fa-solid ${['fa-trophy','fa-medal','fa-award'][entry.rank-1]}`} style={{ fontSize: 12 }} />
+              : entry.rank}
+          </div>
+        </div>
         <Avatar alias={entry.alias} color={entry.avatar_color} size={32} />
-<div style={{ flex: 1, minWidth: 0 }}>
-  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)',
-    display: 'flex', alignItems: 'center', gap: 4 }}>
-    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-      {entry.alias}
-    </span>
-    {entry.is_me && <span style={{ fontSize: 10, color: 'var(--gold)', flexShrink: 0 }}>({lang === 'es' ? 'yo' : 'me'})</span>}
-    {!entry.is_me && (
-      <button
-        onClick={() => setViewingMember({ userId: entry.user_id, alias: entry.alias })}
-        style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 12, padding: '0 2px', flexShrink: 0 }}
-        title={lang === 'es' ? 'Ver predicciones' : 'View predictions'}
-      >
-        <i className="fa-solid fa-eye" />
-      </button>
-    )}
-  </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)',
+            display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {entry.alias}
+            </span>
+            {entry.is_me && <span style={{ fontSize: 10, color: 'var(--gold)', flexShrink: 0 }}>({lang === 'es' ? 'yo' : 'me'})</span>}
+            {!entry.is_me && (
+              <button
+                onClick={() => setViewingMember({ userId: entry.user_id, alias: entry.alias })}
+                style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', fontSize: 12, padding: '0 2px', flexShrink: 0 }}
+                title={lang === 'es' ? 'Ver predicciones' : 'View predictions'}
+              >
+                <i className="fa-solid fa-eye" />
+              </button>
+            )}
+          </div>
           <div style={{ fontSize: 10, color: 'var(--text3)' }}>
             <i className="fa-solid fa-check" style={{ marginRight: 3 }} />{entry.correct_winners}{' '}
             <i className="fa-solid fa-bullseye" style={{ marginRight: 3, marginLeft: 6 }} />{entry.correct_scores}
