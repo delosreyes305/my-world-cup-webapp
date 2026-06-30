@@ -283,3 +283,26 @@ class LeagueMember(db.Model):
     __table_args__ = (
         db.UniqueConstraint('league_id', 'user_id', name='uq_league_member'),
     )
+
+class ChampionPick(db.Model):
+    """User's prediction for the World Cup champion."""
+    __tablename__ = 'champion_picks'
+
+    id         = db.Column(db.Integer, primary_key=True)
+    user_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
+    team_name  = db.Column(db.String(100), nullable=False)
+    team_flag  = db.Column(db.String(255), nullable=True)   # logo URL
+    locked     = db.Column(db.Boolean, default=False)       # True once R16 starts
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id':        self.id,
+            'user_id':   self.user_id,
+            'team_name': self.team_name,
+            'team_flag': self.team_flag,
+            'locked':    self.locked,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+        }

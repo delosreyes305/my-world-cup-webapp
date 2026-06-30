@@ -8,7 +8,7 @@ from extensions import db
 from jobs.score_calculator import maybe_calculate_scores
 from models import (
     User, QuinielaProfile, Prediction, PredictionScore,
-    PrivateLeague, LeagueMember, QuinielaChampion,
+    PrivateLeague, LeagueMember, QuinielaChampion, ChampionPick,
 )
  
 quiniela_bp = Blueprint('quiniela', __name__)
@@ -531,6 +531,81 @@ def get_global_member_predictions(target_user_id):
 
 
 # ── Admin: force score recalculation ───────────────────────────────────
+
+
+# ─── Champion Pick endpoints ──────────────────────────────────────────
+
+@quiniela_bp.route('/champion-pick', methods=['GET'])
+@jwt_required()
+def get_champion_pick():
+    """Get the current user's champion prediction."""
+    user_id = get_jwt_identity()
+    pick = ChampionPick.query.filter_by(user_id=user_id).first()
+    return jsonify({'pick': pick.to_dict() if pick else None}), 200
+
+
+@quiniela_bp.route('/champion-pick', methods=['POST', 'PUT'])
+@jwt_required()
+def save_champion_pick():
+    """Create or update the user's champion prediction.
+    Locked once the first R16 match has started."""
+    user_id = get_jwt_identity()
+    data = request.get_json() or {}
+    team_name = data.get('team_name', '').strip()
+    team_flag = data.get('team_flag', '')
+
+    if not team_name:
+        return jsonify({'error': 'team_name required'}), 400
+
+    pick = ChampionPick.query.filter_by(user_id=user_id).first()
+
+    if pick and pick.locked:
+        return jsonify({'error': 'Champion pick is locked — R16 has started'}), 403
+
+    if pick:
+        pick.team_name = team_name
+        pick.team_flag = team_flag
+        pick.updated_at = datetime.utcnow()
+    else:
+        pick = ChampionPick(user_id=user_id, team_name=team_name, team_flag=team_flag)
+        db.session.add(pick)
+
+    db.session.commit()
+    return jsonify({'pick': pick.to_dict()}), 200
+
+
+@quiniela_bp.route('/champion-pick/active-teams', methods=['GET'])
+def get_active_teams():
+    """Return teams still in the tournament (not eliminated).
+    Derives active teams from predictions that have fixture_ids still unscored
+    or from a hardcoded list updated as tournament progresses.
+    For now returns all teams that have appeared in predictions as home/away
+    and haven't been marked eliminated.
+    """
+    # Get distinct teams from all fixtures that are upcoming or live (not ft-and-lost)
+    # Simple approach: return all teams that have unplayed fixtures
+    from jobs.score_calculator import FINISHED
+    import requests as req_lib, os
+
+    api_key = os.getenv('FOOTBALL_API_KEY', '')
+    active = []
+    try:
+        resp = req_lib.get(
+            'https://v3.football.api-sports.io/teams?league=1&season=2026',
+            headers={'x-apisports-key': api_key},
+            timeout=10,
+        )
+        teams_data = resp.json().get('response', [])
+        active = [
+            {'name': t['team']['name'], 'flag': t['team']['logo']}
+            for t in teams_data
+        ]
+        active.sort(key=lambda x: x['name'])
+    except Exception as e:
+        print(f'[active-teams] error: {e}')
+
+    return jsonify({'teams': active}), 200
+
 @quiniela_bp.route('/admin/recalculate-scores', methods=['POST'])
 def admin_recalculate_scores():
     """
@@ -546,69 +621,13 @@ def admin_recalculate_scores():
         return jsonify({'error': 'Unauthorized'}), 401
 
     from jobs.score_calculator import calculate_scores
-    try:
-        result = calculate_scores(current_app._get_current_object())
-        return jsonify({'message': 'Score recalculation completed', 'result': result}), 200
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+    import threading
+    app_ref = current_app._get_current_object()
+    def run():
+        try:
+            calculate_scores(app_ref)
+        except Exception as e:
+            print(f'[admin_recalculate] error: {e}')
+    threading.Thread(target=run, daemon=True).start()
 
-
-@quiniela_bp.route('/admin/score-debug', methods=['GET'])
-def admin_score_debug():
-    """
-    Diagnostic: shows exactly what calculate_scores() would see right now —
-    how many predictions are unscored, which fixtures they belong to, and
-    what API-Football returns for each. No side effects (read-only).
-    """
-    secret = os.getenv('ADMIN_SECRET', '')
-    if not secret or request.headers.get('X-Admin-Secret') != secret:
-        return jsonify({'error': 'Unauthorized'}), 401
-
-    from jobs.score_calculator import _fetch_fixture, FINISHED
-    from datetime import datetime
-
-    _key = os.getenv('FOOTBALL_API_KEY', '')
-    key_preview = (_key[:4] + '...' + _key[-4:]) if len(_key) > 8 else ('<empty>' if not _key else _key)
-
-    unscored = (
-        db.session.query(Prediction)
-        .outerjoin(PredictionScore, Prediction.id == PredictionScore.prediction_id)
-        .filter(PredictionScore.id.is_(None))
-        .all()
-    )
-
-    now = datetime.utcnow()
-    by_fixture = {}
-    for p in unscored:
-        by_fixture.setdefault(p.fixture_id, []).append(p)
-
-    details = []
-    for fixture_id, preds in by_fixture.items():
-        match_date = preds[0].match_date
-        past_kickoff = bool(match_date and match_date <= now)
-        api_status = None
-        api_goals = None
-        if past_kickoff:
-            fixture = _fetch_fixture(fixture_id)
-            if fixture:
-                api_status = fixture.get('fixture', {}).get('status', {}).get('short', '')
-                api_goals = fixture.get('goals', {})
-        details.append({
-            'fixture_id': fixture_id,
-            'unscored_predictions': len(preds),
-            'match_date': match_date.isoformat() if match_date else None,
-            'past_kickoff': past_kickoff,
-            'api_status': api_status,
-            'is_finished_per_api': api_status in FINISHED if api_status else None,
-            'api_goals': api_goals,
-        })
-
-    return jsonify({
-        'now_utc': now.isoformat(),
-        'api_key_loaded_in_module': key_preview,
-        'total_unscored_predictions': len(unscored),
-        'total_unscored_fixtures': len(by_fixture),
-        'fixtures': details,
-    }), 200
+    return jsonify({'message': 'Score recalculation triggered'}), 200

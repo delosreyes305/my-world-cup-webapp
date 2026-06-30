@@ -1121,6 +1121,88 @@ function LeaguesTab({ token, lang, userId }) {
 // ─────────────────────────────────────────────────────────────────────
 // MAIN PAGE
 // ─────────────────────────────────────────────────────────────────────
+
+// ─── Champion Tab ──────────────────────────────────────────────────────────
+function ChampionTab({ token, lang, pick, activeTeams, champSelected, setChampSelected, onSave, saving, locked }) {
+  return (
+    <div style={{ maxWidth: 480, margin: '0 auto' }}>
+      <div className="card" style={{ textAlign: 'center', padding: '28px 24px' }}>
+        <i className="fa-solid fa-trophy" style={{ fontSize: 36, color: 'var(--gold)', marginBottom: 16, display: 'block' }} aria-hidden="true" />
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--gold)', marginBottom: 8 }}>
+          {lang === 'es' ? 'Predicción de Campeón' : 'Champion Prediction'}
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 24, lineHeight: 1.5 }}>
+          {lang === 'es'
+            ? 'Predice qué selección ganará el Mundial 2026. Acierto = +10 puntos.'
+            : 'Predict which team will win the 2026 World Cup. Correct pick = +10 points.'}
+        </p>
+
+        {pick && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+            background: 'rgba(240,180,41,0.08)', borderRadius: 10, padding: '14px 20px',
+            border: '1px solid rgba(240,180,41,0.2)', marginBottom: 20,
+          }}>
+            {pick.team_flag && (
+              <img src={pick.team_flag} alt={pick.team_name}
+                style={{ width: 32, height: 24, objectFit: 'cover', borderRadius: 3 }}
+                onError={e => { e.target.style.display = 'none' }}
+              />
+            )}
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>
+                {lang === 'es' ? 'Tu predicción actual' : 'Your current pick'}
+              </div>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, color: 'var(--gold)' }}>
+                {pick.team_name}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {locked ? (
+          <div style={{ fontSize: 13, color: 'var(--text3)', padding: '12px 0' }}>
+            <i className="fa-solid fa-lock" style={{ marginRight: 6 }} aria-hidden="true" />
+            {lang === 'es'
+              ? 'La Ronda de 16 ha comenzado. Ya no se puede modificar la predicción.'
+              : 'Round of 16 has started. Predictions are now locked.'}
+          </div>
+        ) : (
+          <>
+            <select
+              value={champSelected}
+              onChange={e => setChampSelected(e.target.value)}
+              style={{
+                width: '100%', padding: '10px 14px', borderRadius: 8, marginBottom: 16,
+                background: 'var(--card2)', color: 'var(--text)', border: '1px solid var(--border)',
+                fontSize: 14, cursor: 'pointer',
+              }}
+            >
+              <option value="">{lang === 'es' ? '— Selecciona un equipo —' : '— Select a team —'}</option>
+              {activeTeams.map(t => (
+                <option key={t.name} value={t.name}>{t.name}</option>
+              ))}
+            </select>
+            <button onClick={onSave} disabled={!champSelected || saving} style={{
+              width: '100%', padding: '12px 0', borderRadius: 8, border: 'none',
+              background: champSelected ? 'var(--gold)' : 'var(--card2)',
+              color: champSelected ? 'var(--navy)' : 'var(--text3)',
+              cursor: champSelected ? 'pointer' : 'not-allowed',
+              fontWeight: 700, fontSize: 14, transition: 'all 0.2s',
+            }}>
+              {saving
+                ? (lang === 'es' ? 'Guardando...' : 'Saving...')
+                : pick
+                  ? (lang === 'es' ? 'Actualizar predicción' : 'Update prediction')
+                  : (lang === 'es' ? 'Guardar predicción' : 'Save prediction')}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function Quiniela() {
   const { lang }                        = useLang()
   const { user, token, authLoading, openAuthModal } = useAuth()
@@ -1136,11 +1218,68 @@ export default function Quiniela() {
   const [editSaving,   setEditSaving]   = useState(false)
   const [globalViewingMember, setGlobalViewingMember] = useState(null)
 
+  // ── Champion pick state ──────────────────────────────
+  const [championPick,     setChampionPick]     = useState(undefined) // undefined=loading
+  const [showChampionModal, setShowChampionModal] = useState(false)
+  const [activeTeams,      setActiveTeams]      = useState([])
+  const [champSaving,      setChampSaving]      = useState(false)
+  const [champSelected,    setChampSelected]    = useState('')
+  const [r16Started,       setR16Started]       = useState(false)
+
+  // Load champion pick + active teams when logged in
+  React.useEffect(() => {
+    if (!token) return
+    fetch('/api/quiniela/champion-pick', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        setChampionPick(d.pick)
+        setChampSelected(d.pick?.team_name || '')
+        // Auto-show modal if no pick yet and R16 hasn't started
+        if (!d.pick && !d.pick?.locked) setShowChampionModal(true)
+      })
+      .catch(() => setChampionPick(null))
+
+    fetch('/api/quiniela/champion-pick/active-teams')
+      .then(r => r.json())
+      .then(d => setActiveTeams(d.teams || []))
+      .catch(() => {})
+  }, [token])
+
+  // Check if first R16 match has started (lock criterion)
+  React.useEffect(() => {
+    if (!predictions?.length) return
+    const r16Started = predictions.some(p =>
+      p.round && /round.of.16/i.test(p.round) && p.match_date && new Date(p.match_date) <= new Date()
+    )
+    setR16Started(r16Started)
+  }, [predictions])
+
+  async function saveChampionPick() {
+    if (!champSelected || champSaving) return
+    setChampSaving(true)
+    try {
+      const team = activeTeams.find(t => t.name === champSelected)
+      const resp = await fetch('/api/quiniela/champion-pick', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ team_name: champSelected, team_flag: team?.flag || '' }),
+      })
+      const d = await resp.json()
+      if (resp.ok) {
+        setChampionPick(d.pick)
+        setShowChampionModal(false)
+      }
+    } finally {
+      setChampSaving(false)
+    }
+  }
+
   const tabs = [
     { key: 'predict',  label: lang === 'es' ? 'Predecir'   : 'Predict',   icon: 'fa-solid fa-pen-to-square' },
     { key: 'history',  label: lang === 'es' ? 'Mis predicciones' : 'My predictions', icon: 'fa-solid fa-clock-rotate-left' },
     { key: 'global',   label: lang === 'es' ? 'Global'     : 'Global',    icon: 'fa-solid fa-ranking-star'  },
     { key: 'leagues',  label: lang === 'es' ? 'Mis ligas'  : 'My leagues', icon: 'fa-solid fa-users'        },
+    { key: 'champion', label: lang === 'es' ? 'Campeón'    : 'Champion',   icon: 'fa-solid fa-trophy'       },
   ]
 
   const loadProfile = useCallback(async () => {
@@ -1352,8 +1491,82 @@ export default function Quiniela() {
       {activeTab === 'leagues' && (
         <LeaguesTab token={token} lang={lang} userId={user.id} />
       )}
+      {activeTab === 'champion' && (
+        <ChampionTab
+          token={token} lang={lang}
+          pick={championPick} activeTeams={activeTeams}
+          champSelected={champSelected} setChampSelected={setChampSelected}
+          onSave={saveChampionPick} saving={champSaving}
+          locked={r16Started || championPick?.locked}
+        />
+      )}
+
       {globalViewingMember && (
         <GlobalMemberModal token={token} lang={lang} userId={globalViewingMember.userId} alias={globalViewingMember.alias} onClose={() => setGlobalViewingMember(null)} />
+      )}
+
+      {/* ── Champion Pick Modal ── */}
+      {showChampionModal && token && !r16Started && createPortal(
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+        }}
+          onClick={e => { if (e.target === e.currentTarget) setShowChampionModal(false) }}
+        >
+          <div style={{
+            background: 'var(--card)', borderRadius: 16, padding: 28, maxWidth: 380, width: '100%',
+            border: '1px solid rgba(240,180,41,0.2)', boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: 20 }}>
+              <i className="fa-solid fa-trophy" style={{ fontSize: 32, color: 'var(--gold)', marginBottom: 12, display: 'block' }} aria-hidden="true" />
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--gold)', marginBottom: 8 }}>
+                {lang === 'es' ? '¿Quién ganará el Mundial?' : 'Who will win the World Cup?'}
+              </h2>
+              <p style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.5 }}>
+                {lang === 'es'
+                  ? 'Selecciona tu campeón antes de que empiece la Ronda de 16. ¡Acierto = +10 puntos!'
+                  : 'Pick your champion before Round of 16 starts. Correct pick = +10 points!'}
+              </p>
+            </div>
+
+            <select
+              value={champSelected}
+              onChange={e => setChampSelected(e.target.value)}
+              style={{
+                width: '100%', padding: '10px 14px', borderRadius: 8, marginBottom: 16,
+                background: 'var(--card2)', color: 'var(--text)', border: '1px solid var(--border)',
+                fontSize: 14, cursor: 'pointer',
+              }}
+            >
+              <option value="">{lang === 'es' ? '— Selecciona un equipo —' : '— Select a team —'}</option>
+              {activeTeams.map(t => (
+                <option key={t.name} value={t.name}>{t.name}</option>
+              ))}
+            </select>
+
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button onClick={() => setShowChampionModal(false)} style={{
+                flex: 1, padding: '10px 0', borderRadius: 8, border: '1px solid var(--border)',
+                background: 'transparent', color: 'var(--text3)', cursor: 'pointer', fontSize: 13,
+              }}>
+                {lang === 'es' ? 'Más tarde' : 'Later'}
+              </button>
+              <button onClick={saveChampionPick} disabled={!champSelected || champSaving} style={{
+                flex: 2, padding: '10px 0', borderRadius: 8, border: 'none',
+                background: champSelected ? 'var(--gold)' : 'var(--card2)',
+                color: champSelected ? 'var(--navy)' : 'var(--text3)',
+                cursor: champSelected ? 'pointer' : 'not-allowed',
+                fontWeight: 700, fontSize: 13, transition: 'all 0.2s',
+              }}>
+                {champSaving
+                  ? (lang === 'es' ? 'Guardando...' : 'Saving...')
+                  : (lang === 'es' ? 'Guardar predicción' : 'Save prediction')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   )
