@@ -163,7 +163,7 @@ export default function Bracket() {
   const { t, lang } = useLang()
   const navigate    = useNavigate()
 
-  const [activeTab, setActiveTab] = useState('groups')
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('bracket_tab') || 'groups')
 
   // Group standings — connected to API
   const { data: standings, loading: standLoad, error: standErr, refetch: refetchStand } =
@@ -222,7 +222,7 @@ export default function Bracket() {
         {TABS.map(tab => (
           <button key={tab.key}
             className={`scroll-tab${activeTab === tab.key ? ' active' : ''}`}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => { setActiveTab(tab.key); localStorage.setItem('bracket_tab', tab.key) }}
             role="tab" aria-selected={activeTab === tab.key}>
             {tab.label}
           </button>
