@@ -622,32 +622,7 @@ function GlobalTab({ token, lang, myProfile, onViewUser }) {
 
   return (
     <div>
-      {/* My rank highlight */}
-      {data?.my_rank && (
-        <div className="card mb-16" style={{
-          display: 'flex', alignItems: 'center', gap: 12,
-          background: 'linear-gradient(135deg,rgba(240,180,41,0.10),rgba(240,180,41,0.04))',
-          border: '1px solid rgba(240,180,41,0.2)',
-        }}>
-          <i className="fa-solid fa-ranking-star" style={{ fontSize: 24, color: 'var(--gold)' }} />
-          <div>
-            <div style={{ fontSize: 13, color: 'var(--text3)' }}>
-              {lang === 'es' ? 'Tu posición global' : 'Your global rank'}
-            </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--gold)', lineHeight: 1 }}>
-              #{data.my_rank}
-            </div>
-          </div>
-          <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-            <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)' }}>
-              {data.my_profile?.total_points ?? 0} pts
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--text3)' }}>
-              {data.total} {lang === 'es' ? 'participantes' : 'participants'}
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {loading
         ? [1,2,3,4,5].map(i => <div key={i} className="skeleton mb-6" style={{ height: 56, borderRadius: 10 }} />)
