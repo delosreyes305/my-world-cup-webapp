@@ -517,28 +517,56 @@ img { max-width: 100%; }
 .pred-t2   { background: var(--gold);  transition: flex 0.5s ease; }
 
 /* ─── BRACKET ─────────────────────────────────── */
-.bracket-wrap { display: flex; gap: 0; overflow-x: auto; padding-bottom: 8px; }
-.bracket-round { display: flex; flex-direction: column; justify-content: space-around; min-width: 170px; padding: 0 8px; }
+/* ── Bracket layout ──────────────────────────────────────
+   Each round column shares a fixed slot grid so cards align.
+   Slot height = CARD_H + GAP = 72 + 8 = 80px (set as CSS var).
+   R32 = 16 slots, R16 = 8 (each spanning 2 R32 slots), QF = 4, SF = 2, F = 1.
+──────────────────────────────────────────────────────── */
+:root { --bk-card: 72px; --bk-gap: 8px; --bk-slot: 80px; }
+
+.bracket-wrap {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  align-items: flex-start;
+}
+.bracket-round {
+  display: flex;
+  flex-direction: column;
+  min-width: 176px;
+  padding: 0 6px;
+  flex-shrink: 0;
+}
 .bracket-round-title {
   font-size: 10px;
   color: var(--text3);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   text-align: center;
+  height: 18px;
+  line-height: 18px;
+}
+/* The slot container holds all cards for a round using absolute positioning */
+.bracket-slots {
+  position: relative;
 }
 .bracket-match {
+  position: absolute;
+  left: 0; right: 0;
   background: var(--card);
   border: 1px solid rgba(255,255,255,0.06);
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  margin: 6px 0;
+  padding: 8px 10px;
   cursor: pointer;
   transition: var(--transition);
   font-size: 12px;
+  box-sizing: border-box;
+  height: var(--bk-card);
 }
 .bracket-match:hover { border-color: rgba(240,180,41,0.2); }
-.bracket-team { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; }
+.bracket-team { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; }
 .bracket-team.winner { color: var(--gold); font-weight: 600; }
 .bracket-team.loser  { color: var(--text3); }
 

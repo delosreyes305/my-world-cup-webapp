@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useApi } from '../hooks/useApi'
 import { getStandings, getAllFixtures } from '../services/sportsService'
-import { sortR32ByBracket, sortR16ByBracket } from '../data/bracketData'
 import ApiStatus from '../components/common/ApiStatus'
 
 // ─── Knockout round definitions (order matters) ────────
@@ -40,7 +39,7 @@ function Flag({ flag, name, size = 16 }) {
 }
 
 // ─── Bracket match card ────────────────────────────────
-function BracketMatch({ match, navigate }) {
+function BracketMatch({ match, navigate, topPx = 0 }) {
   const { id, team1, flag1, team2, flag2, score1, score2, status, time } = match
 
   const homeName = team1 || 'TBD'
@@ -58,7 +57,7 @@ function BracketMatch({ match, navigate }) {
       role="button"
       tabIndex={0}
       onKeyDown={e => e.key === 'Enter' && id && navigate(`/matches/${id}`, { state: { match } })}
-      style={{ position: 'relative' }}
+      style={{ top: topPx }}
     >
       {/* Home team */}
       <div className={`bracket-team${homeWon ? ' winner' : awayWon ? ' loser' : ''}`}>
@@ -185,9 +184,8 @@ export default function Bracket() {
         if (!buckets[round.key]) buckets[round.key] = { ...round, matches: [] }
         buckets[round.key].matches.push(m)
       })
-    // Sort R32 and R16 into official bracket order
-    if (buckets.r32) buckets.r32.matches = sortR32ByBracket(buckets.r32.matches)
-    if (buckets.r16) buckets.r16.matches = sortR16ByBracket(buckets.r16.matches)
+    // Sort all rounds by date (FIFA schedules matches in official bracket order)
+    Object.values(buckets).forEach(b => b.matches.sort((a, z) => new Date(a.date) - new Date(z.date)))
     return KNOCKOUT_ROUNDS.filter(r => buckets[r.key]).map(r => buckets[r.key])
   }, [fixtures])
 
@@ -298,65 +296,74 @@ export default function Bracket() {
             </div>
           }>
 
-          {/* Scrollable horizontal bracket */}
-          <div className="bracket-wrap" style={{ alignItems: 'flex-start' }}>
-            {knockoutRounds.map(round => {
-              // Card + gap dimensions (must match CSS .bracket-match + gap)
-              const CARD_H = 82
-              const GAP    = 10
-              const UNIT   = CARD_H + GAP  // px per R32 row
+          {/* Scrollable horizontal bracket — slot-based grid
+               SLOT = 80px (--bk-slot = --bk-card 72px + --bk-gap 8px)
+               R32: 16 slots (one per match), total height = 16 × 80 = 1280px
+               R16:  8 slots (each spans 2 R32 slots)
+               QF:   4 slots (each spans 2 R16 slots = 4 R32 slots)
+               SF:   2 slots (each spans 2 QF slots)
+               F:    1 slot  (spans 2 SF slots)
 
-              // For R16: compute marginTop between consecutive cards using
-              // parent row positions so each R16 card sits centered between
-              // its two R32 parents.
-              //
-              // parentRows[i] = [topRow, botRow] (0-indexed R32 positions)
-              const parentRows = [
-                [1, 4],   // M89 ← M74(row1), M77(row4)
-                [0, 2],   // M90 ← M73(row0), M75(row2)
-                [3, 5],   // M91 ← M76(row3), M78(row5)
-                [6, 7],   // M92 ← M79(row6), M80(row7)
-                [10, 11], // M93 ← M83(row10), M84(row11)
-                [8, 9],   // M94 ← M81(row8),  M82(row9)
-                [13, 15], // M95 ← M86(row13), M88(row15)
-                [12, 14], // M96 ← M85(row12), M87(row14)
+               R32→R16 official mapping (parentRows = [topR32row, botR32row]):
+                 M89: rows [1,4]   M90: rows [0,2]
+                 M91: rows [3,5]   M92: rows [6,7]
+                 M93: rows [10,11] M94: rows [8,9]
+                 M95: rows [13,15] M96: rows [12,14]
+          */}
+          <div className="bracket-wrap">
+            {knockoutRounds.map(round => {
+              const SLOT = 80   // px — must match CSS :root --bk-slot
+              const CARD = 72   // px — must match CSS :root --bk-card
+
+              // How many R32 slots does each card in this round span?
+              const slotsPerCard = {
+                r32: 1, r16: 2, qf: 4, sf: 8, '3rd': 8, f: 16,
+              }[round.key] ?? 1
+
+              const totalSlots = 16  // always based on R32 count
+              const slotHeight = totalSlots * SLOT
+
+              // For R16 specifically, the parent R32 rows are non-consecutive
+              // (bracket order ≠ sequential). Use the official FIFA mapping.
+              const r16ParentRows = [
+                [1, 4],   // M89: M74(row1) vs M77(row4)
+                [0, 2],   // M90: M73(row0) vs M75(row2)
+                [3, 5],   // M91: M76(row3) vs M78(row5)
+                [6, 7],   // M92: M79(row6) vs M80(row7)
+                [10, 11], // M93: M83(row10) vs M84(row11)
+                [8, 9],   // M94: M81(row8)  vs M82(row9)
+                [13, 15], // M95: M86(row13) vs M88(row15)
+                [12, 14], // M96: M85(row12) vs M87(row14)
               ]
 
-              // Compute absolute top for each R16 card (center between parents)
-              const r16Tops = parentRows.map(([topRow, botRow]) => {
-                const topEdge = topRow * UNIT
-                const botEdge = botRow * UNIT + CARD_H
-                const r16H    = CARD_H - 8  // R16 cards slightly shorter
-                return Math.round(topEdge + (botEdge - topEdge - r16H) / 2)
-              })
+              // Compute top position for each card in this round
+              function cardTop(i) {
+                if (round.key === 'r16') {
+                  const [topRow, botRow] = r16ParentRows[i] ?? [i * 2, i * 2 + 1]
+                  const spanPx = (botRow - topRow) * SLOT + SLOT // total px span
+                  const startPx = topRow * SLOT
+                  return startPx + (spanPx - CARD) / 2
+                }
+                // For QF, SF, Final: evenly spaced, each centered in its span
+                const spanPx = slotsPerCard * SLOT
+                return i * spanPx + (spanPx - CARD) / 2
+              }
 
               return (
-                <div key={round.key} className="bracket-round" style={{ minWidth: 190 }}>
+                <div key={round.key} className="bracket-round">
                   <div className="bracket-round-title">
                     {ROUND_LABELS[round.key] || round.label}
-                    <span style={{ marginLeft: 6, color: 'var(--text3)', fontSize: 9 }}>
-                      ({round.matches.length})
-                    </span>
                   </div>
-
-                  {round.key === 'r16' ? (
-                    // R16: use a relative container with absolute-positioned cards
-                    <div style={{ position: 'relative', height: 16 * UNIT }}>
-                      {round.matches.map((m, i) => (
-                        <div key={m.id} style={{
-                          position: 'absolute',
-                          top: r16Tops[i] ?? i * UNIT * 2,
-                          left: 0, right: 0,
-                        }}>
-                          <BracketMatch match={m} navigate={navigate} />
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    round.matches.map(m => (
-                      <BracketMatch key={m.id} match={m} navigate={navigate} />
-                    ))
-                  )}
+                  <div className="bracket-slots" style={{ height: slotHeight }}>
+                    {round.matches.map((m, i) => (
+                      <BracketMatch
+                        key={m.id}
+                        match={m}
+                        navigate={navigate}
+                        topPx={cardTop(i)}
+                      />
+                    ))}
+                  </div>
                 </div>
               )
             })}
