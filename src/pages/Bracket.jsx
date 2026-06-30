@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext'
 import { useApi } from '../hooks/useApi'
 import { getStandings, getAllFixtures } from '../services/sportsService'
 import ApiStatus from '../components/common/ApiStatus'
-import { sortR32ByBracket } from '../data/bracketData'
+import { sortR32ByBracket, sortR16ByBracket } from '../data/bracketData'
 
 // ─── Knockout round definitions (order matters) ────────
 const KNOCKOUT_ROUNDS = [
@@ -188,6 +188,7 @@ export default function Bracket() {
     // Sort all rounds by date, R32 by official bracket position
     Object.values(buckets).forEach(b => b.matches.sort((a, z) => new Date(a.date) - new Date(z.date)))
     if (buckets.r32) buckets.r32.matches = sortR32ByBracket(buckets.r32.matches)
+    if (buckets.r16) buckets.r16.matches = sortR16ByBracket(buckets.r16.matches)
     return KNOCKOUT_ROUNDS.filter(r => buckets[r.key]).map(r => buckets[r.key])
   }, [fixtures])
 
@@ -325,8 +326,14 @@ export default function Bracket() {
               const totalSlots = 16  // always based on R32 count
               const slotHeight = totalSlots * SLOT
 
-              // R32 is now sorted in consecutive pairs: 0,1 → R16[0], 2,3 → R16[1], etc.
-              const r16ParentRows = Array.from({ length: 8 }, (_, i) => [i * 2, i * 2 + 1])
+              // parentRows[i] = the two R32 rows that feed R16 card i
+              // Since R16 is sorted by bracket slot, card i sits at slot = its bracket position
+              // We compute the slot for each card from the sorted array index + the fixture order map
+              const R16_ORDER = { 1567824: 1, 1568100: 2 } // same as R16_FIXTURE_ORDER
+              const r16ParentRows = round.matches.map(m => {
+                const slot = R16_ORDER[m.id] ?? round.matches.indexOf(m)
+                return [slot * 2, slot * 2 + 1]
+              })
 
               // Compute top position for each card in this round
               function cardTop(i) {

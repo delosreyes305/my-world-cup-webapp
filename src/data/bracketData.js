@@ -99,9 +99,25 @@ export function sortR32ByBracket(r32Matches) {
 /**
  * Sort R16 fixtures into official bracket order (matches 89-96 top to bottom).
  */
+/**
+ * Maps API-Football fixture IDs to their official R16 bracket position (0-indexed).
+ * Position 0 = top slot, 7 = bottom slot.
+ * Populated as matches are scheduled — unknown IDs fall back to date sort.
+ */
+export const R16_FIXTURE_ORDER = {
+  1567824: 1,  // Canada vs Morocco   (M90: W73 vs W75 → rows 2,3)
+  1568100: 2,  // Brazil vs Norway    (M91: W76 vs W78 → rows 4,5)
+  // Remaining 6 matches TBD — will be added as IDs become available
+}
+
 export function sortR16ByBracket(r16Matches) {
   if (!r16Matches?.length) return r16Matches || []
-  return [...r16Matches].sort((a, b) => new Date(a.date) - new Date(b.date))
+  return [...r16Matches].sort((a, b) => {
+    const ai = R16_FIXTURE_ORDER[a.id] ?? 99
+    const bi = R16_FIXTURE_ORDER[b.id] ?? 99
+    if (ai === 99 && bi === 99) return new Date(a.date) - new Date(b.date)
+    return ai - bi
+  })
 }
 
 /**
