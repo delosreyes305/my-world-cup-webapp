@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LangContext'
 import { useApi } from '../hooks/useApi'
 import { getStandings, getAllFixtures } from '../services/sportsService'
+import { sortR32ByBracket, sortR16ByBracket, computeR16Offsets } from '../data/bracketData'
 import ApiStatus from '../components/common/ApiStatus'
 
 // ─── Knockout round definitions (order matters) ────────
@@ -184,6 +185,9 @@ export default function Bracket() {
         if (!buckets[round.key]) buckets[round.key] = { ...round, matches: [] }
         buckets[round.key].matches.push(m)
       })
+    // Sort R32 and R16 into official bracket order
+    if (buckets.r32) buckets.r32.matches = sortR32ByBracket(buckets.r32.matches)
+    if (buckets.r16) buckets.r16.matches = sortR16ByBracket(buckets.r16.matches)
     return KNOCKOUT_ROUNDS.filter(r => buckets[r.key]).map(r => buckets[r.key])
   }, [fixtures])
 
@@ -296,19 +300,35 @@ export default function Bracket() {
 
           {/* Scrollable horizontal bracket */}
           <div className="bracket-wrap" style={{ alignItems: 'flex-start' }}>
-            {knockoutRounds.map(round => (
-              <div key={round.key} className="bracket-round" style={{ minWidth: 190 }}>
-                <div className="bracket-round-title">
-                  {ROUND_LABELS[round.key] || round.label}
-                  <span style={{ marginLeft: 6, color: 'var(--text3)', fontSize: 9 }}>
-                    ({round.matches.length})
-                  </span>
+            {knockoutRounds.map(round => {
+              // Compute vertical offsets for R16 cards so each sits centered
+              // between its two parent R32 cards
+              const CARD_H = 82
+              const R16_H  = 74
+              const GAP    = 10
+              const r16Offsets = round.key === 'r16'
+                ? computeR16Offsets(CARD_H, R16_H, GAP)
+                : null
+
+              return (
+                <div key={round.key} className="bracket-round" style={{ minWidth: 190 }}>
+                  <div className="bracket-round-title">
+                    {ROUND_LABELS[round.key] || round.label}
+                    <span style={{ marginLeft: 6, color: 'var(--text3)', fontSize: 9 }}>
+                      ({round.matches.length})
+                    </span>
+                  </div>
+                  {round.matches.map((m, i) => (
+                    <div
+                      key={m.id}
+                      style={r16Offsets ? { marginTop: i === 0 ? r16Offsets[0] : GAP + r16Offsets[i] } : undefined}
+                    >
+                      <BracketMatch match={m} navigate={navigate} />
+                    </div>
+                  ))}
                 </div>
-                {round.matches.map(m => (
-                  <BracketMatch key={m.id} match={m} navigate={navigate} />
-                ))}
-              </div>
-            ))}
+              )
+            })}
           </div>
         </ApiStatus>
       )}
