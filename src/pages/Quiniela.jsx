@@ -1547,9 +1547,15 @@ export default function Quiniela() {
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setShowChampionModal(false)} style={{
-                flex: 1, padding: '10px 0', borderRadius: 8, border: '1px solid var(--border)',
-                background: 'transparent', color: 'var(--text3)', cursor: 'pointer', fontSize: 13,
-              }}>
+                flex: 1, padding: '10px 0', borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.06)',
+                color: 'var(--text)', cursor: 'pointer', fontSize: 13,
+                fontWeight: 600, transition: 'all 0.2s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+              >
                 {lang === 'es' ? 'Más tarde' : 'Later'}
               </button>
               <button onClick={saveChampionPick} disabled={!champSelected || champSaving} style={{
