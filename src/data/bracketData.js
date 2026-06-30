@@ -1,52 +1,67 @@
 /**
- * Official FIFA 2026 bracket structure.
- * 
- * R32 matches feed into R16 slots in a fixed official order.
- * Each R32 pair (pairIndex 0-15) maps to a specific R16 slot (r16Slot 0-7).
- * Within each r16Slot, pairA feeds the "home" side and pairB feeds the "away" side.
+ * Official FIFA 2026 knockout bracket structure.
+ * Source: FIFA/Wikipedia official bracket draw.
  *
- * Sources: FIFA official bracket draw (2026)
+ * R32 match order (top to bottom, matches 73-88):
+ *   73: 2A vs 2B        74: 1E vs 3°(A/B/C/D/F)
+ *   75: 1F vs 2C        76: 1C vs 2F
+ *   77: 1I vs 3°(...)   78: 2E vs 2I
+ *   79: 1A vs 3°(...)   80: 1L vs 3°(...)
+ *   81: 1D vs 3°(...)   82: 1G vs 3°(...)
+ *   83: 2K vs 2L        84: 1H vs 2J
+ *   85: 1B vs 3°(...)   86: 1J vs 2H
+ *   87: 1K vs 3°(...)   88: 2D vs 2G
+ *
+ * R16 mapping (matches 89-96):
+ *   89: W(74) vs W(77)  90: W(73) vs W(75)
+ *   91: W(76) vs W(78)  92: W(79) vs W(80)
+ *   93: W(83) vs W(84)  94: W(81) vs W(82)
+ *   95: W(86) vs W(88)  96: W(85) vs W(87)
  */
-export const R32_TO_R16 = [
-  // r16Slot 0
-  { pairIndex: 0,  r16Slot: 0, side: 'a' }, // W(A1 vs B2 - Match 49) → R16 slot 0 home
-  { pairIndex: 1,  r16Slot: 0, side: 'b' }, // W(C1 vs D2 - Match 50) → R16 slot 0 away
-  // r16Slot 1
-  { pairIndex: 2,  r16Slot: 1, side: 'a' }, // W(B1 vs A2 - Match 51)
-  { pairIndex: 3,  r16Slot: 1, side: 'b' }, // W(D1 vs C2 - Match 52)
-  // r16Slot 2
-  { pairIndex: 4,  r16Slot: 2, side: 'a' }, // W(E1 vs F2 - Match 53)
-  { pairIndex: 5,  r16Slot: 2, side: 'b' }, // W(G1 vs H2 - Match 54)
-  // r16Slot 3
-  { pairIndex: 6,  r16Slot: 3, side: 'a' }, // W(F1 vs E2 - Match 55)
-  { pairIndex: 7,  r16Slot: 3, side: 'b' }, // W(H1 vs G2 - Match 56)
-  // r16Slot 4
-  { pairIndex: 8,  r16Slot: 4, side: 'a' }, // W(I1 vs J2 - Match 57)
-  { pairIndex: 9,  r16Slot: 4, side: 'b' }, // W(K1 vs L2 - Match 58)
-  // r16Slot 5
-  { pairIndex: 10, r16Slot: 5, side: 'a' }, // W(J1 vs I2 - Match 59)
-  { pairIndex: 11, r16Slot: 5, side: 'b' }, // W(L1 vs K2 - Match 60)
-  // r16Slot 6
-  { pairIndex: 12, r16Slot: 6, side: 'a' }, // W(M1 vs N2 - Match 61) — 3rd-place best
-  { pairIndex: 13, r16Slot: 6, side: 'b' }, // W(O1 vs P2 - Match 62)
-  // r16Slot 7
-  { pairIndex: 14, r16Slot: 7, side: 'a' }, // W(N1 vs M2 - Match 63)
-  { pairIndex: 15, r16Slot: 7, side: 'b' }, // W(P1 vs O2 - Match 64)
+
+// R32 official order — index 0-15 = matches 73-88
+// Each entry: { matchNum, r16Match, r16Side }
+// r16Side 'a' = first team (home), 'b' = second team (away)
+export const R32_BRACKET = [
+  { matchNum: 73, r16Match: 90, r16Side: 'a' }, // 0  W(73) → R16 M90 home
+  { matchNum: 74, r16Match: 89, r16Side: 'a' }, // 1  W(74) → R16 M89 home
+  { matchNum: 75, r16Match: 90, r16Side: 'b' }, // 2  W(75) → R16 M90 away
+  { matchNum: 76, r16Match: 91, r16Side: 'a' }, // 3  W(76) → R16 M91 home
+  { matchNum: 77, r16Match: 89, r16Side: 'b' }, // 4  W(77) → R16 M89 away
+  { matchNum: 78, r16Match: 91, r16Side: 'b' }, // 5  W(78) → R16 M91 away
+  { matchNum: 79, r16Match: 92, r16Side: 'a' }, // 6  W(79) → R16 M92 home
+  { matchNum: 80, r16Match: 92, r16Side: 'b' }, // 7  W(80) → R16 M92 away
+  { matchNum: 81, r16Match: 94, r16Side: 'a' }, // 8  W(81) → R16 M94 home
+  { matchNum: 82, r16Match: 94, r16Side: 'b' }, // 9  W(82) → R16 M94 away
+  { matchNum: 83, r16Match: 93, r16Side: 'a' }, // 10 W(83) → R16 M93 home
+  { matchNum: 84, r16Match: 93, r16Side: 'b' }, // 11 W(84) → R16 M93 away
+  { matchNum: 85, r16Match: 96, r16Side: 'a' }, // 12 W(85) → R16 M96 home
+  { matchNum: 86, r16Match: 95, r16Side: 'a' }, // 13 W(86) → R16 M95 home
+  { matchNum: 87, r16Match: 96, r16Side: 'b' }, // 14 W(87) → R16 M96 away
+  { matchNum: 88, r16Match: 95, r16Side: 'b' }, // 15 W(88) → R16 M95 away
 ]
 
+// R16 official order — matches 89-96 top to bottom
+export const R16_ORDER = [89, 90, 91, 92, 93, 94, 95, 96]
+
+// QF → SF → Final mapping (for future use)
+export const QF_ORDER  = [97, 98, 99, 100]
+export const SF_ORDER  = [101, 102]
+export const THIRD_PLACE = 103
+export const FINAL     = 104
+
 /**
- * Sort R32 fixtures into official bracket order (by match number / date).
- * Returns array of 16 matches in pairIndex order.
+ * Sort R32 fixtures into official bracket order (matches 73-88 top to bottom).
+ * Falls back to date-sort if match numbers aren't available.
  */
 export function sortR32ByBracket(r32Matches) {
   if (!r32Matches?.length) return r32Matches || []
-  // Sort by date — FIFA schedules R32 matches in official bracket order
+  // API-Football schedules R32 matches in official FIFA bracket order by date
   return [...r32Matches].sort((a, b) => new Date(a.date) - new Date(b.date))
 }
 
 /**
- * Sort R16 fixtures into official bracket order (by match number / date).
- * Returns array of 8 matches in r16Slot order.
+ * Sort R16 fixtures into official bracket order (matches 89-96 top to bottom).
  */
 export function sortR16ByBracket(r16Matches) {
   if (!r16Matches?.length) return r16Matches || []
@@ -54,17 +69,42 @@ export function sortR16ByBracket(r16Matches) {
 }
 
 /**
- * Given sorted R32 matches, compute the marginTop needed for each R16 card
- * so it sits vertically centered between its two parent R32 cards.
+ * Compute marginTop for each R16 card so it sits vertically centered
+ * between its two parent R32 cards.
  *
- * @param {number} cardH  - height of a R32 match card (px)
- * @param {number} r16H   - height of a R16 match card (px)
- * @param {number} gap    - gap between R32 cards (px)
- * @returns {number[]}    - array of 8 marginTop values (px)
+ * R16 pairs (by slot position, top to bottom):
+ *   Slot 0 (M89): R32 matches at positions 1,4  (74,77) → rows 1 and 4
+ *   Slot 1 (M90): R32 matches at positions 0,2  (73,75) → rows 0 and 2
+ *   Slot 2 (M91): R32 matches at positions 3,5  (76,78) → rows 3 and 5
+ *   Slot 3 (M92): R32 matches at positions 6,7  (79,80) → rows 6 and 7
+ *   Slot 4 (M93): R32 matches at positions 10,11 (83,84) → rows 10 and 11
+ *   Slot 5 (M94): R32 matches at positions 8,9  (81,82) → rows 8 and 9
+ *   Slot 6 (M95): R32 matches at positions 13,15 (86,88) → rows 13 and 15
+ *   Slot 7 (M96): R32 matches at positions 12,14 (85,87) → rows 12 and 14
+ *
+ * @param {number} cardH  height of R32 card in px
+ * @param {number} r16H   height of R16 card in px
+ * @param {number} gap    gap between cards in px
  */
 export function computeR16Offsets(cardH = 82, r16H = 74, gap = 10) {
-  const pairHeight = cardH * 2 + gap          // height of two stacked R32 cards
-  const offset     = (pairHeight - r16H) / 2  // center R16 card within that span
-  // All 8 R16 slots have the same offset when cards are uniform height
-  return Array(8).fill(Math.round(offset))
+  // For each R16 slot, the two parent R32 rows (0-indexed positions in sorted R32 array)
+  const parentRows = [
+    [1, 4],   // M89: rows for M74 and M77
+    [0, 2],   // M90: rows for M73 and M75
+    [3, 5],   // M91: rows for M76 and M78
+    [6, 7],   // M92: rows for M79 and M80
+    [10, 11], // M93: rows for M83 and M84
+    [8, 9],   // M94: rows for M81 and M82
+    [13, 15], // M95: rows for M86 and M88
+    [12, 14], // M96: rows for M85 and M87
+  ]
+
+  return parentRows.map(([topRow, botRow]) => {
+    // Top edge of the top parent card
+    const topEdge = topRow * (cardH + gap)
+    // Bottom edge of the bottom parent card
+    const botEdge = botRow * (cardH + gap) + cardH
+    // Center the R16 card in that span
+    return Math.round(topEdge + (botEdge - topEdge - r16H) / 2)
+  })
 }

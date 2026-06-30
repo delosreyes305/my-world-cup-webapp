@@ -311,7 +311,12 @@ export default function Bracket() {
                 : null
 
               return (
-                <div key={round.key} className="bracket-round" style={{ minWidth: 190 }}>
+                <div key={round.key} className="bracket-round" style={{
+                  minWidth: 190,
+                  position: 'relative',
+                  // R16 column needs explicit height to contain absolute children
+                  ...(round.key === 'r16' && { height: 16 * (CARD_H + GAP) }),
+                }}>
                   <div className="bracket-round-title">
                     {ROUND_LABELS[round.key] || round.label}
                     <span style={{ marginLeft: 6, color: 'var(--text3)', fontSize: 9 }}>
@@ -321,7 +326,9 @@ export default function Bracket() {
                   {round.matches.map((m, i) => (
                     <div
                       key={m.id}
-                      style={r16Offsets ? { marginTop: i === 0 ? r16Offsets[0] : GAP + r16Offsets[i] } : undefined}
+                      style={r16Offsets
+                        ? { position: 'absolute', top: r16Offsets[i], left: 0, right: 0 }
+                        : undefined}
                     >
                       <BracketMatch match={m} navigate={navigate} />
                     </div>
