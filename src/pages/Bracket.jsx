@@ -41,13 +41,14 @@ function Flag({ flag, name, size = 16 }) {
 
 // ─── Bracket match card ────────────────────────────────
 function BracketMatch({ match, navigate, topPx = 0 }) {
-  const { id, team1, flag1, team2, flag2, score1, score2, status, time } = match
+  const { id, team1, flag1, team2, flag2, score1, score2, pen1, pen2, status, time } = match
 
   const homeName = team1 || 'TBD'
   const awayName = team2 || 'TBD'
 
-  const homeWon = status === 'ft' && score1 > score2
-  const awayWon = status === 'ft' && score2 > score1
+  const hasPen   = pen1 !== null && pen2 !== null
+  const homeWon  = status === 'ft' && (hasPen ? pen1 > pen2 : score1 > score2)
+  const awayWon  = status === 'ft' && (hasPen ? pen2 > pen1 : score2 > score1)
 
   const hasScore = score1 !== null && score2 !== null
 
@@ -68,8 +69,9 @@ function BracketMatch({ match, navigate, topPx = 0 }) {
             {homeName}
           </span>
         </span>
-        <span style={{ fontWeight: homeWon ? 700 : 400, color: homeWon ? 'var(--gold)' : 'inherit', marginLeft: 6, flexShrink: 0 }}>
+        <span style={{ fontWeight: homeWon ? 700 : 400, color: homeWon ? 'var(--gold)' : 'inherit', marginLeft: 6, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
           {hasScore ? score1 : '—'}
+          {hasPen && <span style={{ fontSize: 9, color: homeWon ? 'var(--gold)' : 'var(--text3)', opacity: 0.8 }}>({pen1})</span>}
         </span>
       </div>
 
@@ -81,8 +83,9 @@ function BracketMatch({ match, navigate, topPx = 0 }) {
             {awayName}
           </span>
         </span>
-        <span style={{ fontWeight: awayWon ? 700 : 400, color: awayWon ? 'var(--gold)' : 'inherit', marginLeft: 6, flexShrink: 0 }}>
+        <span style={{ fontWeight: awayWon ? 700 : 400, color: awayWon ? 'var(--gold)' : 'inherit', marginLeft: 6, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
           {hasScore ? score2 : '—'}
+          {hasPen && <span style={{ fontSize: 9, color: awayWon ? 'var(--gold)' : 'var(--text3)', opacity: 0.8 }}>({pen2})</span>}
         </span>
       </div>
 
@@ -94,7 +97,9 @@ function BracketMatch({ match, navigate, topPx = 0 }) {
           </span>
         )}
         {status === 'ft' && (
-          <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600 }}>FT</span>
+          <span style={{ fontSize: 9, color: 'var(--text3)', fontWeight: 600 }}>
+            {hasPen ? 'PEN' : 'FT'}
+          </span>
         )}
         {status === 'upcoming' && time && time !== '' && (
           <span style={{ fontSize: 9, color: 'var(--electric)' }}>{time}</span>

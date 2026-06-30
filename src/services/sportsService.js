@@ -945,6 +945,8 @@ function normalizeFixture(raw) {
     team2Id: a?.id ?? null,
     score1:  g?.home ?? null,
     score2:  g?.away ?? null,
+    pen1:    raw.score?.penalty?.home ?? null,
+    pen2:    raw.score?.penalty?.away ?? null,
     status:  mapStatus(f.status?.short),
     time:    timeStr,
     group:   raw.league?.round || '',
