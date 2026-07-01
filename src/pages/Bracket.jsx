@@ -176,7 +176,7 @@ export default function Bracket() {
 
   // All fixtures — used to build knockout bracket
   const { data: fixtures, loading: fixLoad, error: fixErr, refetch: refetchFix } =
-    useApi(getAllFixtures, { ttl: 1_800_000, skip: activeTab !== 'knockout' })
+    useApi(getAllFixtures, { ttl: 120_000, skip: activeTab !== 'knockout' })
 
   // Build ordered knockout rounds from fixture data
   const knockoutRounds = useMemo(() => {
@@ -334,7 +334,7 @@ export default function Bracket() {
               // parentRows[i] = the two R32 rows that feed R16 card i
               // Since R16 is sorted by bracket slot, card i sits at slot = its bracket position
               // We compute the slot for each card from the sorted array index + the fixture order map
-              const R16_ORDER = { 1567824: 1, 1568100: 2 } // same as R16_FIXTURE_ORDER
+              const R16_ORDER = { 1569870: 0, 1567824: 1, 1568100: 2 } // same as R16_FIXTURE_ORDER
               const r16ParentRows = round.matches.map(m => {
                 const slot = R16_ORDER[m.id] ?? round.matches.indexOf(m)
                 return [slot * 2, slot * 2 + 1]

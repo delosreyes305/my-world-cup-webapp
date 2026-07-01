@@ -105,9 +105,10 @@ export function sortR32ByBracket(r32Matches) {
  * Populated as matches are scheduled — unknown IDs fall back to date sort.
  */
 export const R16_FIXTURE_ORDER = {
+  1569870: 0,  // Paraguay vs France  (M89: W74 vs W77 → rows 0,1)
   1567824: 1,  // Canada vs Morocco   (M90: W73 vs W75 → rows 2,3)
   1568100: 2,  // Brazil vs Norway    (M91: W76 vs W78 → rows 4,5)
-  // Remaining 6 matches TBD — will be added as IDs become available
+  // Remaining 5 matches TBD — will be added as IDs become available
 }
 
 export function sortR16ByBracket(r16Matches) {
