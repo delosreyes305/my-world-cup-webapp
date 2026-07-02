@@ -1171,7 +1171,7 @@ function ChampionTab({ token, lang, pick, activeTeams, champSelected, setChampSe
   return (
     <div style={{ maxWidth: 480, margin: '0 auto' }}>
       <div className="card" style={{ textAlign: 'center', padding: '28px 24px' }}>
-        <i className="fa-solid fa-trophy" style={{ fontSize: 36, color: 'var(--gold)', marginBottom: 16, display: 'block' }} aria-hidden="true" />
+        <i className="fa-solid fa-trophy" style={{ fontSize: 36, color: 'var(--gold)', marginBottom: 16, display: 'block', textAlign: 'center' }} aria-hidden="true" />
         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--gold)', marginBottom: 8 }}>
           {lang === 'es' ? 'Predicción de Campeón' : 'Champion Prediction'}
         </h2>
@@ -1270,7 +1270,7 @@ export default function Quiniela() {
   const [champSelected,    setChampSelected]    = useState('')
   const [r16Started,       setR16Started]       = useState(false)
 
-  // Load champion pick + active teams when logged in
+  // Load champion pick on login (fast — DB only, no external API)
   React.useEffect(() => {
     if (!token) return
     fetch('/api/quiniela/champion-pick', { headers: { Authorization: `Bearer ${token}` } })
@@ -1282,12 +1282,18 @@ export default function Quiniela() {
         if (!d.pick && !d.pick?.locked) setShowChampionModal(true)
       })
       .catch(() => setChampionPick(null))
-
-    fetch('/api/quiniela/champion-pick/active-teams')
-      .then(r => r.json())
-      .then(d => setActiveTeams(d.teams || []))
-      .catch(() => {})
   }, [token])
+
+  // Load active teams lazily — only when champion tab is active or modal is open
+  // This avoids blocking the Quiniela load with a slow external API call
+  React.useEffect(() => {
+    if (!activeTeams.length && (activeTab === 'champion' || showChampionModal)) {
+      fetch('/api/quiniela/champion-pick/active-teams')
+        .then(r => r.json())
+        .then(d => setActiveTeams(d.teams || []))
+        .catch(() => {})
+    }
+  }, [activeTab, showChampionModal])
 
   // Check if first R16 match has started (lock criterion)
   React.useEffect(() => {
@@ -1518,16 +1524,25 @@ export default function Quiniela() {
   </div>
 )}
 
-{activeTab === 'predict' && (
-  <PredictTab
+{activeTab === 'predict' && predictions === null && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+          {[1,2,3,4].map(i => (
+            <div key={i} className="skeleton" style={{ height: 88, borderRadius: 12 }} />
+          ))}
+        </div>
+      )}
+
+      {activeTab === 'predict' && predictions !== null && (
+        <PredictTab
           token={token}
           lang={lang}
           predictions={predictions}
           onPredictionSaved={loadPredictions}
         />
       )}
+
       {activeTab === 'history' && (
-        <MyPredictionsTab predictions={predictions} lang={lang} navigate={navigate} />
+        <MyPredictionsTab predictions={predictions ?? []} lang={lang} navigate={navigate} />
       )}
       {activeTab === 'global' && (
         <GlobalTab token={token} lang={lang} myProfile={profile} onViewUser={setGlobalViewingMember} />
