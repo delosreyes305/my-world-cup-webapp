@@ -49,11 +49,18 @@ export function AuthProvider({ children }) {
         if (res.ok && data?.user) {
           setUser(data.user)
           setToken(stored)
-        } else {
+        } else if (res.status === 401 || res.status === 403) {
+          // Only clear token on explicit auth rejection — not on server errors or timeouts
           localStorage.removeItem('mwc_token')
+        } else {
+          // Server error (5xx) or unexpected response — keep token, assume cold start
+          setToken(stored)
         }
       })
-      .catch(() => localStorage.removeItem('mwc_token'))
+      .catch(() => {
+        // Network error / timeout (Railway cold start) — keep token, user stays logged in
+        setToken(stored)
+      })
       .finally(() => setAuthLoading(false))
   }, [])
 
