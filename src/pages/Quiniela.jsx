@@ -239,7 +239,7 @@ function PredictTab({ token, lang, predictions, onPredictionSaved }) {
   // Build input map from existing predictions
   useEffect(() => {
     const map = {}
-    predictions.forEach(p => {
+    (predictions || []).forEach(p => {
       map[p.fixture_id] = { home: String(p.pred_home), away: String(p.pred_away) }
     })
     setInputs(map)
@@ -327,7 +327,7 @@ function PredictTab({ token, lang, predictions, onPredictionSaved }) {
           {matches.map(fixture => {
             const inp     = inputs[fixture.id] || {}
             const locked  = isLocked(fixture.date)
-            const pred    = predictions.find(p => p.fixture_id === fixture.id)
+            const pred    = (predictions || []).find(p => p.fixture_id === fixture.id)
             const msg     = messages[fixture.id]
             const isSaving = saving[fixture.id]
             const hasInput = inp.home !== undefined && inp.away !== undefined
@@ -1253,7 +1253,7 @@ export default function Quiniela() {
   const navigate                        = useNavigate()
 
   const [profile,     setProfile]     = useState(undefined) // undefined = loading
-  const [predictions, setPredictions] = useState([])
+  const [predictions, setPredictions] = useState(null)
   const [activeTab,   setActiveTab]   = useState(() => localStorage.getItem('quiniela_tab') || 'predict')
   const [editingAlias, setEditingAlias] = useState(false)
   const [newAlias,     setNewAlias]     = useState("")
@@ -1536,7 +1536,7 @@ export default function Quiniela() {
         <PredictTab
           token={token}
           lang={lang}
-          predictions={predictions}
+          predictions={predictions ?? []}
           onPredictionSaved={loadPredictions}
         />
       )}
