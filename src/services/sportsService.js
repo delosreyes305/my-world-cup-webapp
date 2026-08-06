@@ -495,33 +495,6 @@ export async function getTeamFixtures(teamId) {
  * prioritarios. Si la API aún no tiene datos, devuelve [] y la UI
  * muestra "Sin datos disponibles aún".
  */
-
-// ── World Cup 2026 final stats (fallback when API blocks season 2026) ──
-const WC2026_SCORERS = [
-  { id: 1,  name: 'Kylian Mbappé',      nation: 'France',      goals: 10, assists: 4, yellowCards: 1, redCards: 0, pos: 'FW', club: 'Real Madrid',   age: 27, rating: '9.5', height: '1.78m', weight: '73kg', caps: 96,  intlGoals: 57 },
-  { id: 2,  name: 'Lionel Messi',        nation: 'Argentina',   goals: 8,  assists: 4, yellowCards: 1, redCards: 0, pos: 'FW', club: 'Inter Miami',    age: 38, rating: '9.4', height: '1.70m', weight: '72kg', caps: 194, intlGoals: 116 },
-  { id: 3,  name: 'Jude Bellingham',     nation: 'England',     goals: 7,  assists: 1, yellowCards: 2, redCards: 0, pos: 'MF', club: 'Real Madrid',   age: 22, rating: '9.0', height: '1.86m', weight: '83kg', caps: 54,  intlGoals: 23 },
-  { id: 4,  name: 'Erling Haaland',      nation: 'Norway',      goals: 7,  assists: 0, yellowCards: 1, redCards: 0, pos: 'FW', club: 'Man City',       age: 25, rating: '9.1', height: '1.94m', weight: '88kg', caps: 42,  intlGoals: 38 },
-  { id: 5,  name: 'Ousmane Dembélé',     nation: 'France',      goals: 6,  assists: 2, yellowCards: 1, redCards: 0, pos: 'FW', club: 'PSG',            age: 27, rating: '8.7', height: '1.78m', weight: '67kg', caps: 72,  intlGoals: 18 },
-  { id: 6,  name: 'Harry Kane',          nation: 'England',     goals: 6,  assists: 1, yellowCards: 1, redCards: 0, pos: 'FW', club: 'Bayern Munich',  age: 31, rating: '8.8', height: '1.88m', weight: '86kg', caps: 91,  intlGoals: 72 },
-  { id: 7,  name: 'Mikel Oyarzabal',     nation: 'Spain',       goals: 5,  assists: 1, yellowCards: 2, redCards: 0, pos: 'FW', club: 'Real Sociedad',  age: 27, rating: '8.6', height: '1.82m', weight: '75kg', caps: 43,  intlGoals: 21 },
-  { id: 8,  name: 'Lamine Yamal',        nation: 'Spain',       goals: 2,  assists: 3, yellowCards: 1, redCards: 0, pos: 'FW', club: 'Barcelona',      age: 18, rating: '9.0', height: '1.75m', weight: '65kg', caps: 26,  intlGoals: 9 },
-  { id: 9,  name: 'Vinicius Jr',         nation: 'Brazil',      goals: 4,  assists: 1, yellowCards: 2, redCards: 0, pos: 'FW', club: 'Real Madrid',   age: 24, rating: '9.0', height: '1.76m', weight: '73kg', caps: 53,  intlGoals: 17 },
-  { id: 10, name: 'Bukayo Saka',         nation: 'England',     goals: 3,  assists: 3, yellowCards: 1, redCards: 0, pos: 'FW', club: 'Arsenal',        age: 24, rating: '8.8', height: '1.78m', weight: '72kg', caps: 52,  intlGoals: 18 },
-  { id: 11, name: 'Ismaila Sarr',        nation: 'Senegal',     goals: 4,  assists: 1, yellowCards: 2, redCards: 0, pos: 'FW', club: 'Marseille',      age: 26, rating: '8.3', height: '1.87m', weight: '80kg', caps: 58,  intlGoals: 14 },
-  { id: 12, name: 'Lautaro Martínez',    nation: 'Argentina',   goals: 3,  assists: 1, yellowCards: 2, redCards: 0, pos: 'FW', club: 'Inter Milan',    age: 27, rating: '8.7', height: '1.74m', weight: '79kg', caps: 72,  intlGoals: 35 },
-  { id: 13, name: 'Romelu Lukaku',       nation: 'Belgium',     goals: 3,  assists: 1, yellowCards: 2, redCards: 0, pos: 'FW', club: 'Napoli',         age: 31, rating: '8.3', height: '1.90m', weight: '94kg', caps: 114, intlGoals: 78 },
-  { id: 14, name: 'Jonathan David',      nation: 'Canada',      goals: 3,  assists: 0, yellowCards: 1, redCards: 0, pos: 'FW', club: 'PSG',            age: 25, rating: '8.5', height: '1.76m', weight: '75kg', caps: 47,  intlGoals: 28 },
-  { id: 15, name: 'Cristiano Ronaldo',   nation: 'Portugal',    goals: 3,  assists: 0, yellowCards: 1, redCards: 0, pos: 'FW', club: 'Al Nassr',       age: 41, rating: '8.6', height: '1.87m', weight: '83kg', caps: 222, intlGoals: 137 },
-  { id: 16, name: 'Rodri',              nation: 'Spain',        goals: 1,  assists: 3, yellowCards: 3, redCards: 0, pos: 'MF', club: 'Man City',       age: 29, rating: '9.2', height: '1.91m', weight: '82kg', caps: 74,  intlGoals: 19 },
-  { id: 17, name: 'Kai Havertz',         nation: 'Germany',     goals: 3,  assists: 0, yellowCards: 2, redCards: 0, pos: 'FW', club: 'Arsenal',        age: 26, rating: '8.4', height: '1.90m', weight: '83kg', caps: 58,  intlGoals: 24 },
-  { id: 18, name: 'Cody Gakpo',          nation: 'Netherlands', goals: 3,  assists: 1, yellowCards: 1, redCards: 0, pos: 'FW', club: 'Liverpool',      age: 25, rating: '8.4', height: '1.89m', weight: '80kg', caps: 42,  intlGoals: 16 },
-  { id: 19, name: 'Ferran Torres',       nation: 'Spain',       goals: 1,  assists: 0, yellowCards: 0, redCards: 0, pos: 'FW', club: 'Barcelona',      age: 25, rating: '8.5', height: '1.82m', weight: '76kg', caps: 49,  intlGoals: 23 },
-  { id: 20, name: 'Julian Quiñones',     nation: 'Mexico',      goals: 4,  assists: 1, yellowCards: 1, redCards: 0, pos: 'FW', club: 'Club América',   age: 28, rating: '8.2', height: '1.75m', weight: '72kg', caps: 31,  intlGoals: 12 },
-]
-
-
-// ── World Cup 2026 final stats — real data fallback when API blocks season 2026 ──
 // Sources: FIFA.com, Al Jazeera, WorldCupWiki, FOX Sports — July 2026
 const WC2026_SCORERS = [
   { id: 1,  name: 'Kylian Mbappé',         nation: 'France',       goals: 10, assists: 4, yellowCards: 1, redCards: 0, pos: 'FW', club: 'Real Madrid',      age: 27, rating: '9.5', height: '1.78m', weight: '73kg', caps: 96,  intlGoals: 57 },
