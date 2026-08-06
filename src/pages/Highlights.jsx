@@ -240,7 +240,7 @@ export default function Highlights() {
         {datesInRound.length > 1 && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 24 }}>
             <button onClick={() => setActiveDate('all')} style={{
-              padding: '5px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
+              padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
               fontWeight: 600, fontSize: 11,
               background: activeDate === 'all' ? 'rgba(240,180,41,0.15)' : 'var(--card)',
               color: activeDate === 'all' ? 'var(--gold)' : 'var(--text3)',
@@ -257,7 +257,7 @@ export default function Highlights() {
               )
               return (
                 <button key={d} onClick={() => setActiveDate(d)} style={{
-                  padding: '5px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                  padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
                   fontWeight: 600, fontSize: 11,
                   background: active ? 'rgba(240,180,41,0.15)' : 'var(--card)',
                   color: active ? 'var(--gold)' : 'var(--text3)',

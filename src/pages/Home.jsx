@@ -4,7 +4,7 @@ import { useLang } from '../context/LangContext'
 import { useApp } from '../context/AppContext'
 import { useAuth } from '../context/AuthContext'
 import { useApi, useApiPolling } from '../hooks/useApi'
-import { getLiveMatches, getStandings, getTopScorers, getTopAssists, getTopYellowCards, getTopRedCards, getTeams, getAllFixtures, TEAM_ISO } from '../services/sportsService'
+import { getLiveMatches, getStandings, getTopScorers, getTopAssists, getTopYellowCards, getTopRedCards, getTeams, getAllFixtures, TEAM_ISO, TEAM_METADATA } from '../services/sportsService'
 import { getNews } from '../services/newsService'
 import { getWorldCupHighlights, findHighlightForMatch } from '../services/youtubeService'
 import YouTubeEmbed from '../components/common/YouTubeEmbed'
@@ -393,11 +393,12 @@ export default function Home() {
   }, [activeConfig])
 
   const rankedTeams = useMemo(() =>
-    [...(allTeams || TEAMS)]
-      .filter(t => t.rank)
-      .sort((a, b) => a.rank - b.rank)
-      .slice(0, 5)
-  , [allTeams])
+    Object.entries(TEAM_METADATA)
+      .filter(([, m]) => m.rank)
+      .sort(([, a], [, b]) => a.rank - b.rank)
+      .slice(0, 10)
+      .map(([name, m]) => ({ name, rank: m.rank, titles: m.titles, flag: null }))
+  , [])
 
   const displayMatches = liveMatches?.length ? liveMatches.slice(0, 4) : []
 
