@@ -2,7 +2,7 @@
 // league=1  season=2026  →  FIFA World Cup 2026
 // Docs: https://www.api-football.com/documentation-v3
 //
-// Si no hay clave en .env → usa mockData automáticamente.
+// If there's no data in .env → use mockData automaticly.
 
 import { get } from './http.js'
 import {
@@ -182,55 +182,57 @@ export async function getStandings() {
  * Keyed by the exact team name returned by the API.
  */
 export const TEAM_METADATA = {
-  // Official FIFA Rankings — June 8, 2026 (based on April 1, 2026 official update)
+  // Official FIFA Rankings — July 20, 2026 (post World Cup 2026 update)
+  // Source: FIFA/Coca-Cola Men's World Ranking, released July 20, 2026
   // ── UEFA ──────────────────────────────────────────────
+  Spain:                  { rank:  1, titles: 2 },
   France:                 { rank:  3, titles: 2 },
-  Spain:                  { rank:  2, titles: 1 },
   England:                { rank:  4, titles: 1 },
-  Portugal:               { rank:  5, titles: 0 },
-  Netherlands:            { rank:  8, titles: 0 },
-  Belgium:                { rank:  9, titles: 0 },
-  Germany:                { rank: 10, titles: 4 },
-  Croatia:                { rank: 11, titles: 0 },
-  Switzerland:            { rank: 19, titles: 0 },
-  Austria:                { rank: 24, titles: 0 },
+  Portugal:               { rank:  7, titles: 0 },
+  Belgium:                { rank:  8, titles: 0 },
+  Netherlands:            { rank:  9, titles: 0 },
+  Germany:                { rank: 12, titles: 4 },
+  Croatia:                { rank: 13, titles: 0 },
+  Switzerland:            { rank: 14, titles: 0 },
+  Italy:                  { rank: 15, titles: 4 },
+  Norway:                 { rank: 19, titles: 0 },
+  Denmark:                { rank: 21, titles: 0 },
+  Austria:                { rank: 23, titles: 0 },
+  'Türkiye':              { rank: 27, titles: 0 },
   Sweden:                 { rank: 38, titles: 0 },
-  'Czech Republic':       { rank: 39, titles: 0 },
-  Czechia:                { rank: 39, titles: 0 },
-  'Türkiye':              { rank: 22, titles: 0 },
-  Norway:                 { rank: 31, titles: 0 },
   Scotland:               { rank: 42, titles: 0 },
+  'Czech Republic':       { rank: 39, titles: 0 },
   'Bosnia & Herzegovina': { rank: 64, titles: 0 },
   // ── CONMEBOL ──────────────────────────────────────────
-  Argentina:              { rank:  1, titles: 3 },
-  Brazil:                 { rank:  6, titles: 5 },
-  Colombia:               { rank: 13, titles: 0 },
-  Uruguay:                { rank: 16, titles: 2 },
-  Ecuador:                { rank: 23, titles: 0 },
+  Argentina:              { rank:  2, titles: 3 },
+  Brazil:                 { rank:  5, titles: 5 },
+  Colombia:               { rank: 11, titles: 0 },
+  Uruguay:                { rank: 20, titles: 2 },
+  Ecuador:                { rank: 25, titles: 0 },
   Paraguay:               { rank: 40, titles: 0 },
   // ── CONCACAF ──────────────────────────────────────────
-  USA:                    { rank: 17, titles: 0 },
-  Mexico:                 { rank: 14, titles: 0 },
+  Mexico:                 { rank: 10, titles: 0 },
+  USA:                    { rank: 16, titles: 0 },
   Canada:                 { rank: 30, titles: 0 },
   Panama:                 { rank: 34, titles: 0 },
   'Curaçao':              { rank: 82, titles: 0 },
   Haiti:                  { rank: 83, titles: 0 },
   // ── CAF ───────────────────────────────────────────────
-  Morocco:                { rank:  7, titles: 0 },
-  Senegal:                { rank: 15, titles: 0 },
-  Algeria:                { rank: 28, titles: 0 },
-  Egypt:                  { rank: 29, titles: 0 },
+  Morocco:                { rank:  6, titles: 0 },
+  Senegal:                { rank: 18, titles: 0 },
+  Algeria:                { rank: 29, titles: 0 },
+  Egypt:                  { rank: 24, titles: 0 },
   'Ivory Coast':          { rank: 33, titles: 0 },
-  Tunisia:                { rank: 46, titles: 0 },
-  'DR Congo':             { rank: 45, titles: 0 },
-  'Cape Verde':           { rank: 67, titles: 0 },
+  'Congo DR':             { rank: 45, titles: 0 },
+  'Cape Verde Islands':   { rank: 67, titles: 0 },
   Ghana:                  { rank: 73, titles: 0 },
   'South Africa':         { rank: 60, titles: 0 },
+  Tunisia:                { rank: 46, titles: 0 },
   // ── AFC ───────────────────────────────────────────────
-  Japan:                  { rank: 18, titles: 0 },
-  Iran:                   { rank: 21, titles: 0 },
+  Japan:                  { rank: 17, titles: 0 },
+  Australia:              { rank: 28, titles: 0 },
+  Iran:                   { rank: 22, titles: 0 },
   'South Korea':          { rank: 25, titles: 0 },
-  Australia:              { rank: 27, titles: 0 },
   Qatar:                  { rank: 57, titles: 0 },
   'Saudi Arabia':         { rank: 61, titles: 0 },
   Iraq:                   { rank: 56, titles: 0 },
@@ -246,7 +248,7 @@ export const TEAM_ISO = {
   Argentina: 'ar',   Spain: 'es',      France: 'fr',     England: 'gb-eng',
   Portugal: 'pt',    Netherlands: 'nl', Belgium: 'be',    Germany: 'de',
   Croatia: 'hr',     Switzerland: 'ch', Sweden: 'se',     Austria: 'at',
-  'Czech Republic': 'cz', Czechia: 'cz', Scotland: 'gb-sct', Norway: 'no', 'Türkiye': 'tr',
+  'Czech Republic': 'cz', Scotland: 'gb-sct', Norway: 'no', 'Türkiye': 'tr',
   'Bosnia & Herzegovina': 'ba',
   // CONMEBOL
   Brazil: 'br', Colombia: 'co', Uruguay: 'uy', Ecuador: 'ec', Paraguay: 'py',
@@ -267,7 +269,7 @@ export const TEAM_ISO = {
 const CONFEDERATION_MAP = {
   // UEFA – 16
   Belgium: 'UEFA', France: 'UEFA', Croatia: 'UEFA', Sweden: 'UEFA',
-  Switzerland: 'UEFA', 'Czech Republic': 'UEFA', Czechia: 'UEFA', Austria: 'UEFA',
+  Switzerland: 'UEFA', 'Czech Republic': 'UEFA', Austria: 'UEFA',
   'Türkiye': 'UEFA', Norway: 'UEFA', Scotland: 'UEFA',
   'Bosnia & Herzegovina': 'UEFA', Netherlands: 'UEFA', Germany: 'UEFA',
   Spain: 'UEFA', England: 'UEFA', Portugal: 'UEFA',
@@ -307,7 +309,6 @@ const NATIONAL_STADIUMS = {
   Sweden:                 { name: 'Friends Arena',               city: 'Stockholm',      capacity: 50000 },
   Austria:                { name: 'Ernst Happel Stadion',        city: 'Vienna',         capacity: 48500 },
   'Czech Republic':       { name: 'Sinobo Stadium',              city: 'Prague',         capacity: 20814 },
-  Czechia:                { name: 'Sinobo Stadium',              city: 'Prague',         capacity: 20814 },
   Scotland:               { name: 'Hampden Park',                city: 'Glasgow',        capacity: 52063 },
   Norway:                 { name: 'Ullevaal Stadion',            city: 'Oslo',           capacity: 27182 },
   'Türkiye':              { name: 'Atatürk Olympic Stadium',     city: 'Istanbul',       capacity: 76092 },
@@ -500,50 +501,58 @@ function _sortByStat(players, statKey) {
 }
 
 export async function getTopScorers() {
-  if (isMock) return [...PLAYERS].sort((a, b) => b.goals - a.goals || b.intlGoals - a.intlGoals)
+  if (isMock) return [...WC2026_SCORERS].sort((a, b) => b.goals - a.goals)
 
   const topData = await get(
     `${BASE}/players/topscorers?league=${WC_LEAGUE}&season=${WC_SEASON}`,
     { headers }
   )
 
-  const topScorers = (topData.response || []).map(raw => normalizePlayer(raw))
+  const res0 = topData.response || []
+  if (!res0.length) return [...WC2026_SCORERS].sort((a, b) => b.goals - a.goals)
+  const topScorers = res0.map(normalizePlayer)
   return _sortByStat(topScorers, 'goals')
 }
 
 /** Top asistidores del Mundial */
 export async function getTopAssists() {
-  if (isMock) return [...PLAYERS].sort((a, b) => (b.assists || 0) - (a.assists || 0))
+  if (isMock) return [...WC2026_SCORERS].sort((a, b) => (b.assists || 0) - (a.assists || 0))
 
   const data = await get(
     `${BASE}/players/topassists?league=${WC_LEAGUE}&season=${WC_SEASON}`,
     { headers }
   )
-  const players = (data.response || []).map(raw => normalizePlayer(raw))
+  const res1 = data.response || []
+  if (!res1.length) return [...WC2026_SCORERS].sort((a, b) => (b.assists||0) - (a.assists||0))
+  const players = res1.map(normalizePlayer)
   return _sortByStat(players, 'assists')
 }
 
 /** Top tarjetas amarillas del Mundial */
 export async function getTopYellowCards() {
-  if (isMock) return [...PLAYERS].sort((a, b) => (b.yellowCards || 0) - (a.yellowCards || 0))
+  if (isMock) return [...WC2026_SCORERS].sort((a, b) => (b.yellowCards || 0) - (a.yellowCards || 0))
 
   const data = await get(
     `${BASE}/players/topyellowcards?league=${WC_LEAGUE}&season=${WC_SEASON}`,
     { headers }
   )
-  const players = (data.response || []).map(raw => normalizePlayer(raw))
+  const res2 = data.response || []
+  if (!res2.length) return [...WC2026_SCORERS].sort((a, b) => (b.yellowCards||0) - (a.yellowCards||0))
+  const players = res2.map(normalizePlayer)
   return _sortByStat(players, 'yellowCards')
 }
 
 /** Top tarjetas rojas del Mundial */
 export async function getTopRedCards() {
-  if (isMock) return [...PLAYERS].sort((a, b) => (b.redCards || 0) - (a.redCards || 0))
+  if (isMock) return [...WC2026_SCORERS].sort((a, b) => (b.redCards || 0) - (a.redCards || 0))
 
   const data = await get(
     `${BASE}/players/topredcards?league=${WC_LEAGUE}&season=${WC_SEASON}`,
     { headers }
   )
-  const players = (data.response || []).map(raw => normalizePlayer(raw))
+  const res3 = data.response || []
+  if (!res3.length) return [...WC2026_SCORERS].sort((a, b) => (b.redCards||0) - (a.redCards||0))
+  const players = res3.map(normalizePlayer)
   return _sortByStat(players, 'redCards')
 }
 
@@ -565,7 +574,7 @@ export async function getPlayersByTeam(teamId) {
     `${BASE}/players?team=${teamId}&season=${WC_SEASON}`,
     { headers }
   )
-  return (data.response || []).map(raw => normalizePlayer(raw))
+  return (data.response || []).map(normalizePlayer)
 }
 
 // ─────────────────────────────────────────────────────
@@ -945,8 +954,6 @@ function normalizeFixture(raw) {
     team2Id: a?.id ?? null,
     score1:  g?.home ?? null,
     score2:  g?.away ?? null,
-    pen1:    raw.score?.penalty?.home ?? null,
-    pen2:    raw.score?.penalty?.away ?? null,
     status:  mapStatus(f.status?.short),
     time:    timeStr,
     group:   raw.league?.round || '',
